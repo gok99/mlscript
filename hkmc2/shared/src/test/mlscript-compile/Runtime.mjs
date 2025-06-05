@@ -66,7 +66,7 @@ lit = LazyIterator;
     (class Tuple {
       static {
         Runtime.Tuple = Tuple;
-        this.split = Runtime.LazyIterator.split;
+        this.split = Runtime.ListFingerTree.split;
       }
       static slice(xs, i, j) {
         let tmp;
@@ -75,11 +75,11 @@ lit = LazyIterator;
       } 
       static lazySlice(xs1, i1, j1) {
         let tmp;
-        tmp = Runtime.LazyIterator.slice(i1, j1);
+        tmp = Runtime.ListFingerTree.slice(i1, j1);
         return runtime.safeCall(tmp(xs1))
       } 
       static lazyConcat(...args) {
-        return runtime.safeCall(Runtime.LazyIterator.concat(...args))
+        return runtime.safeCall(Runtime.ListFingerTree.markerConcat(args))
       } 
       static get(xs2, i2) {
         let scrut;
