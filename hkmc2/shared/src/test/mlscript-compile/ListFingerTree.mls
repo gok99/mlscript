@@ -181,13 +181,8 @@ fun popBack(ft) = if safeInput(ft) is
 fun (++) concat(ft1, ft2) = concatMiddle(safeInput(ft1), [], safeInput(ft2))
 
 fun markerConcat(args) = if args is
-  [LFTMarker, lft, a, b, c, d, ...suffix] then (lft :+ a :+ b :+ c :+ d) ++ markerConcat(suffix)
-  [LFTMarker, lft, a, b, c, ...suffix] then (lft :+ a :+ b :+ c) ++ markerConcat(suffix)
-  [LFTMarker, lft, a, ...suffix] then (lft :+ a) ++ markerConcat(suffix)
   [LFTMarker, lft, ...suffix] then lft ++ markerConcat(suffix)
   [a, LFTMarker, lft, ...suffix] then (a +: lft) ++ markerConcat(suffix)
-  [a, b, c, d, ...suffix] then a +: b +: c +: d +: markerConcat(suffix)
-  [a, b, c, ...suffix] then a +: b +: c +: markerConcat(suffix)
   [a, b, ...suffix] then a +: b +: markerConcat(suffix)
   [a, ...suffix] then a +: markerConcat(suffix)
   [] then Empty
