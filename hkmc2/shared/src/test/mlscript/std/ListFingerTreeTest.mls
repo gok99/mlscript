@@ -404,6 +404,29 @@ equal(zs2, zs)
 //│ Predef.pipeInto(tmp45, ListFingerTree.isFingerTree)
 //│ = true
 
+fun map(f) = case
+  [a, ..rest] then
+    [f(a), ..map(f)(rest)]
+  [] then []
+
+fun mapEager(f) = case
+  [a, ...rest] then
+    [f(a), ...mapEager(f)(rest)]
+  [] then []
+
+:silent
+let res = buildEager(1000)
+
+:silent
+:clock 1
+let lm = map(x => x + 1)(res)
+//+ runtime clock time (1): 4.127789 ms
+
+:silent
+:clock 1
+mapEager(x => x + 1)(res)
+//+ runtime clock time (1): 32.002158 ms
+
 fun silly = case
   [a, b, ..xs] then [..xs, ..silly([a, ..xs])]
   [a, ..xs] then [a, ..silly(xs)]
