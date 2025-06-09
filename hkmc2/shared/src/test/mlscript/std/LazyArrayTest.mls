@@ -29,7 +29,7 @@ let ys2 = LazyArray.slice(0, 2)(ys2)
 //│ ys2 = [2, 3, 4, 5]
 
 ys1.concat(xs, ys2)
-//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5]
 
 let ls = if [1,2,3,4,5] is
     [a, ..ls] then ls
@@ -136,9 +136,7 @@ fun buildLazy(i) =
 //│     tmp8 = i - 1;
 //│     tmp9 = buildLazy(tmp8);
 //│     tmp10 = - i;
-//│     return runtime.Tuple.lazyConcat(i,
-//│     runtime.Tuple.split, tmp9,
-//│     tmp10)
+//│     return runtime.Tuple.lazyConcat(i, runtime.Tuple.split, tmp9, tmp10)
 //│   } else {
 //│     return []
 //│   }
@@ -279,8 +277,7 @@ fun map(f) = case
 //│       tmp14 = runtime.safeCall(f(a2));
 //│       tmp15 = map(f);
 //│       tmp16 = runtime.safeCall(tmp15(rest3));
-//│       return runtime.Tuple.lazyConcat(tmp14,
-//│       runtime.Tuple.split, tmp16)
+//│       return runtime.Tuple.lazyConcat(tmp14, runtime.Tuple.split, tmp16)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
@@ -344,14 +341,14 @@ mapEager(x => x + 1)(res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.345: 	mapEager(..[[1]])
+//│ ║  l.349: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.352: 	fun what(..args) = args
+//│ ║  l.356: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case

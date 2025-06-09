@@ -121,9 +121,7 @@ fun buildLazy(i) =
 //│     tmp8 = i - 1;
 //│     tmp9 = buildLazy(tmp8);
 //│     tmp10 = - i;
-//│     return runtime.Tuple.lazyConcat(i,
-//│     runtime.Tuple.split, tmp9,
-//│     tmp10)
+//│     return runtime.Tuple.lazyConcat(i, runtime.Tuple.split, tmp9, tmp10)
 //│   } else {
 //│     return []
 //│   }
@@ -257,8 +255,7 @@ fun intersperse = case
 //│       tmp13 = a2 + 1;
 //│       tmp14 = intersperse();
 //│       tmp15 = tmp14(rest3);
-//│       return runtime.Tuple.lazyConcat(tmp13,
-//│       runtime.Tuple.split, tmp15)
+//│       return runtime.Tuple.lazyConcat(tmp13, runtime.Tuple.split, tmp15)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
@@ -287,8 +284,7 @@ fun intersperseEager = case
 //│       tmp13 = a2 + 1;
 //│       tmp14 = intersperseEager();
 //│       tmp15 = tmp14(rest3);
-//│       return runtime.Tuple.lazyConcat(tmp13,
-//│       runtime.Tuple.split, tmp15)
+//│       return runtime.Tuple.lazyConcat(tmp13, runtime.Tuple.split, tmp15)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
@@ -317,6 +313,6 @@ fun intersperseEager = case
 :ge
 intersperse(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.522: 	intersperse(..[[1]])
+//│ ║  l.324: 	intersperse(..[[1]])
 //│ ╙──       	           ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function expected 1 argument but got 2

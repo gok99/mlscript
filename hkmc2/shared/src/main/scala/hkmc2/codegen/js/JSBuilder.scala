@@ -156,7 +156,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
       // check if there exits an e that is not eager
       val lazyConcat = es.exists(!_.eager)
       if lazyConcat then
-       doc"runtime.Tuple.lazyConcat(${es.map(argument).mkDocument(doc", # ")})"
+       doc"runtime.Tuple.lazyConcat(${es.map(argument).mkDocument(doc", ")})"
       else
        doc"[ #{  # ${es.map(argument).mkDocument(doc", # ")} #}  # ]"
     case Value.Rcd(flds) =>
