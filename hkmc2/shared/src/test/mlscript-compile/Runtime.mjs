@@ -3,15 +3,15 @@ import Term from "./Term.mjs";
 import RuntimeJS from "./RuntimeJS.mjs";
 import Rendering from "./Rendering.mjs";
 import ListFingerTree from "./ListFingerTree.mjs";
-import LazyIterator from "./LazyIterator.mjs";
-let Runtime1, lft, lit;
+import LazyArray from "./LazyArray.mjs";
+let Runtime1, lft, lar;
 lft = ListFingerTree;
-lit = LazyIterator;
+lar = LazyArray;
 (class Runtime {
   static {
     Runtime1 = Runtime;
     this.ListFingerTree = lft;
-    this.LazyIterator = lit;
+    this.LazyArray = lar;
     const Unit$class = class Unit {
       constructor() {}
       toString() {
@@ -66,7 +66,7 @@ lit = LazyIterator;
     (class Tuple {
       static {
         Runtime.Tuple = Tuple;
-        this.split = Runtime.LazyIterator.split;
+        this.split = Runtime.LazyArray.split;
       }
       static slice(xs, i, j) {
         let tmp;
@@ -75,11 +75,11 @@ lit = LazyIterator;
       } 
       static lazySlice(xs1, i1, j1) {
         let tmp;
-        tmp = Runtime.LazyIterator.slice(i1, j1);
+        tmp = Runtime.LazyArray.slice(i1, j1);
         return runtime.safeCall(tmp(xs1))
       } 
       static lazyConcat(...args) {
-        return runtime.safeCall(Runtime.LazyIterator.concat(...args))
+        return runtime.safeCall(Runtime.LazyArray.concat(...args))
       } 
       static get(xs2, i2) {
         let scrut;
@@ -91,7 +91,7 @@ lit = LazyIterator;
         }
       } 
       static isArrayLike(xs3) {
-        return runtime.safeCall(Runtime.LazyIterator.isArrayLike(xs3))
+        return runtime.safeCall(Runtime.LazyArray.isArrayLike(xs3))
       }
       static toString() { return "Tuple"; }
     });

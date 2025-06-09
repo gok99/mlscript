@@ -1,17 +1,17 @@
 import "./RuntimeJS.mjs"
 import "./Rendering.mls"
 import "./ListFingerTree.mjs"
-import "./LazyIterator.mjs"
+import "./LazyArray.mjs"
 
 let lft = ListFingerTree
-let lit = LazyIterator
+let lar = LazyArray
 
 
 module Runtime with ...
 
 
 val ListFingerTree = lft
-val LazyIterator = lit
+val LazyArray = lar
 
 
 object Unit with
@@ -71,8 +71,8 @@ module Tuple with
     // * as it is not affected by users redefining `slice`
     xs.slice(i, xs.length - j)
 
-  fun lazySlice(xs, i, j) = LazyIterator.slice(i, j)(xs)
-  fun lazyConcat(...args) = LazyIterator.concat(...args)
+  fun lazySlice(xs, i, j) = LazyArray.slice(i, j)(xs)
+  fun lazyConcat(...args) = LazyArray.concat(...args)
 
   fun get(xs, i) =
     // * Contrary to `xs.[i]`, this supports negative indices (Python-style)
@@ -80,8 +80,8 @@ module Tuple with
       throw RangeError("Tuple.get: index out of bounds")
     else xs.at(i)
 
-  fun isArrayLike(xs) = LazyIterator.isArrayLike(xs)
-  val split = LazyIterator.split
+  fun isArrayLike(xs) = LazyArray.isArrayLike(xs)
+  val split = LazyArray.split
 
 module Str with
   fun startsWith(string, prefix) = string.startsWith(prefix)
