@@ -1,10 +1,10 @@
 
 import "./Iter.mls"
-import "./ListFingerTree.mls"
+import "./FingerTreeList.mls"
 
 open Iter
 open LazyArray
-open ListFingerTree
+open FingerTreeList
 
 fun normIdx(i, len) =
   if i < 0 then len + i

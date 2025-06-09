@@ -1,9 +1,9 @@
 
 import "./Iter.mls"
-import "./ListFingerTree.mls"
+import "./FingerTreeList.mls"
 
 open Iter
-open ListFingerTree
+open FingerTreeList
 open LazyArrayOld
 
 val useLFT = false
@@ -28,7 +28,7 @@ class View(val underlying: IterableBase, val start, val end) extends LazyItr wit
       else Result.Done
 
   fun flatten() = 
-    LazyIterator.flatten(underlying) ListFingerTree.slice(start, end)()
+    LazyArrayOld.flatten(underlying) FingerTreeList.slice(start, end)()
 
   fun length = underlying.length - start - end
   fun toString() = "[" + this joined(", ") + "]"
@@ -67,8 +67,8 @@ class Splice(val bits) extends LazyItr with
     [] then 0
 
   fun flattenHelper = case
-    [SpliceMarker, e, ..rest] then LazyIterator.flatten(e) ++ flattenHelper(rest)
-    [a, ...rest] then ListFingerTree.mk(a) ++ flattenHelper(rest)
+    [SpliceMarker, e, ..rest] then LazyArrayOld.flatten(e) ++ flattenHelper(rest)
+    [a, ...rest] then FingerTreeList.mk(a) ++ flattenHelper(rest)
     [] then []
 
   fun flatten() = 
@@ -90,7 +90,7 @@ class LazyItrBoxed(val underlying: IterableBase) extends IterableBase with
     if this.fuse > 0 then
       set this.fuse -=  1
     else
-      set underlying = LazyIterator.flatten(underlying)
+      set underlying = LazyArrayOld.flatten(underlying)
 
   fun length = underlying.length
   // TODO: fix to not traverse one by one
@@ -111,15 +111,15 @@ class LazyItrBoxed(val underlying: IterableBase) extends IterableBase with
         next.value
       else underlying.at(idx)
 
-  fun concat(...args) = LazyIterator.concat(split, underlying, ...(args.flatMap (x => [split, x])))
-  fun slice(beg, end) = LazyIterator.slice(beg, underlying.length - end)(underlying)
+  fun concat(...args) = LazyArrayOld.concat(split, underlying, ...(args.flatMap (x => [split, x])))
+  fun slice(beg, end) = LazyArrayOld.slice(beg, underlying.length - end)(underlying)
   fun toString() = "[" + this joined(", ") + "]"
 
 fun unbox = if useLFT 
   then
     case
       LazyItrBoxed(underlying) then underlying
-      Array | IterableBase as itr then ListFingerTree.safeInput(itr)
+      Array | IterableBase as itr then FingerTreeList.safeInput(itr)
       x then x
   else
     case
@@ -145,7 +145,7 @@ fun flatten(xs) = if
 
 fun mk(...args) = LazyItrBoxed of 
   if useLFT 
-  then ListFingerTree.safeInput(args) 
+  then FingerTreeList.safeInput(args) 
   else args
 
 fun concat(...args) = LazyItrBoxed of Splice(safeArgs(args))

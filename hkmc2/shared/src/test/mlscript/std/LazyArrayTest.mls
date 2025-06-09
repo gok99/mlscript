@@ -2,7 +2,7 @@
 
 
 import "../../mlscript-compile/LazyArray.mls"
-import "../../mlscript-compile/ListFingerTree.mls"
+import "../../mlscript-compile/FingerTreeList.mls"
 
 open LazyArray
 
@@ -221,21 +221,21 @@ fun funnySumEager(xs) = if xs is
 :clock 3c9984c
 :silent
 let res = buildLazy(1000)
-//+ runtime clock time (3c9984c): 2.606351 ms
+//+ runtime clock time (3c9984c): 3.021775 ms
 
 :clock 3c9984c
 res |> funnySumEager
-//+ runtime clock time (3c9984c): 30.146908 ms
+//+ runtime clock time (3c9984c): 25.843164 ms
 //│ = 1001000
 
 :silent
 :clock 3c9984c
 let res = buildLazy(1000)
-//+ runtime clock time (3c9984c): 1.669065 ms
+//+ runtime clock time (3c9984c): 1.838144 ms
 
 :clock 3c9984c
 res |> funnySum
-//+ runtime clock time (3c9984c): 17.872047 ms
+//+ runtime clock time (3c9984c): 15.958309 ms
 //│ = 1001000
 // =========================================================================
 
@@ -344,14 +344,14 @@ mapEager(x => x + 1)(res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.345: 	mapEager(..[[1]])
+//│ ║  l.618: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.352: 	fun what(..args) = args
+//│ ║  l.625: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case

@@ -4,7 +4,7 @@ import "./Iter.mls"
 
 open Option
 open Iter
-open ListFingerTree
+open FingerTreeList
 
 // Node[T]
 class Branch2(val size, val e1, val e2)
@@ -17,9 +17,9 @@ fun getNodeSize(node) = if node is
 
 // View[T]
 object Nil
-class View(val e1, val rest) // T, ListFingerTree[T]
+class View(val e1, val rest) // T, FingerTreeList[T]
 
-// ListFingerTree[T]
+// FingerTreeList[T]
 class LFT extends IterableBase with
   fun iterator() =
     let current = this
@@ -30,9 +30,9 @@ class LFT extends IterableBase with
         Result.Next of head
 
   fun toString() = "[" + this joined(", ") + "]"
-  fun length = ListFingerTree.length(this)
+  fun length = FingerTreeList.length(this)
   fun at(i) = get(i)(this)
-  fun concat(other) = ListFingerTree.concat(this, other)
+  fun concat(other) = FingerTreeList.concat(this, other)
 
 object Empty extends LFT with
   fun toString() = "[" + this joined(", ") + "]"
@@ -41,7 +41,7 @@ class Single(val e) extends LFT with
   fun toString() = "[" + this joined(", ") + "]"
 
 // prefix and suffix are at most length 4
-class Deep[T](val size, val prefix: Array[T], val middle, val suffix: Array[T]) extends LFT with // TODO: middle: ListFingerTree[Node[T]]
+class Deep[T](val size, val prefix: Array[T], val middle, val suffix: Array[T]) extends LFT with // TODO: middle: FingerTreeList[Node[T]]
   fun toString() = "[" + [...this].join(", ") + "]"
 
 // amortized O(log n) - is there a proper way to match on tuples?
@@ -112,7 +112,7 @@ fun normIdx(idx, len) =
   else idx
 
 
-module ListFingerTree with...
+module FingerTreeList with...
 
 
 fun safeInput(xs) = if xs is

@@ -1,16 +1,16 @@
 import "./RuntimeJS.mjs"
 import "./Rendering.mls"
-import "./ListFingerTree.mjs"
+import "./FingerTreeList.mjs"
 import "./LazyArray.mjs"
 
-let lft = ListFingerTree
+let lft = FingerTreeList
 let lar = LazyArray
 
 
 module Runtime with ...
 
 
-val ListFingerTree = lft
+val FingerTreeList = lft
 val LazyArray = lar
 
 

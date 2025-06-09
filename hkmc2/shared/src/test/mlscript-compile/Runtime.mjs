@@ -2,15 +2,15 @@ import runtime from "./Runtime.mjs";
 import Term from "./Term.mjs";
 import RuntimeJS from "./RuntimeJS.mjs";
 import Rendering from "./Rendering.mjs";
-import ListFingerTree from "./ListFingerTree.mjs";
+import FingerTreeList from "./FingerTreeList.mjs";
 import LazyArray from "./LazyArray.mjs";
 let Runtime1, lft, lar;
-lft = ListFingerTree;
+lft = FingerTreeList;
 lar = LazyArray;
 (class Runtime {
   static {
     Runtime1 = Runtime;
-    this.ListFingerTree = lft;
+    this.FingerTreeList = lft;
     this.LazyArray = lar;
     const Unit$class = class Unit {
       constructor() {}

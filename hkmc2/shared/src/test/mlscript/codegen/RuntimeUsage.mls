@@ -86,6 +86,6 @@ print of Str.startsWith("hello, world", "farewell")
 //│ > false
 
 
-Runtime.ListFingerTree.mk(1,2,3)
+Runtime.FingerTreeList.mk(1,2,3)
 //│ = [1, 2, 3]
 
