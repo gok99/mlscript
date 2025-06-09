@@ -1,10 +1,10 @@
 :js
 
 
-import "../../mlscript-compile/LazyIterator.mls"
+import "../../mlscript-compile/LazyArrayOld.mls"
 import "../../mlscript-compile/ListFingerTree.mls"
 
-open LazyIterator
+open LazyArrayOld
 open ListFingerTree
 
 
@@ -14,26 +14,26 @@ let xs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 split
 //│ = SpliceMarker
 
-let ys1 = LazyIterator.concat(0, split, [1, 2, 3, 4], split, [5, 6, 7], split, [8, 9])
+let ys1 = LazyArrayOld.concat(0, split, [1, 2, 3, 4], split, [5, 6, 7], split, [8, 9])
 //│ ys1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-let ys2 = LazyIterator.slice(2, 2)(ys1)
+let ys2 = LazyArrayOld.slice(2, 2)(ys1)
 //│ ys2 = [2, 3, 4, 5, 6, 7]
 
 ys2
 //│ = [2, 3, 4, 5, 6, 7]
 
-let ys2 = LazyIterator.slice(0, 2)(ys2)
+let ys2 = LazyArrayOld.slice(0, 2)(ys2)
 //│ ys2 = [2, 3, 4, 5]
 
 [...ys2]
 //│ = [2, 3, 4, 5]
 
-LazyIterator.concat(split, xs, split, ys2)
+LazyArrayOld.concat(split, xs, split, ys2)
 //│ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5]
 
 let ys3 = ys2.concat(xs)
-//│ ys3 = [2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+//│ ys3 = ()
 
 let ls = if [1,2,3,4,5] is
     [a, ..ls] then ls
@@ -232,8 +232,7 @@ res |> funnySumEager
 //+ runtime clock time (38efae2): 1.368807 ms
 //│ = 0
 
-LazyIterator.mk(1,2,3).concat([11, 12, 13], ListFingerTree.mk(2, 4, 6, 8, 10))
-//│ = [1, 2, 3, 11, 12, 13, 2, 4, 6, 8, 10]
+LazyArrayOld.mk(1,2,3).concat([11, 12, 13], ListFingerTree.mk(2, 4, 6, 8, 10))
 
 let xs = [1, 2]
 //│ xs = [1, 2]
@@ -317,6 +316,6 @@ fun intersperseEager = case
 :ge
 intersperse(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.318: 	intersperse(..[[1]])
+//│ ║  l.317: 	intersperse(..[[1]])
 //│ ╙──       	           ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function expected 1 argument but got 2

@@ -4,7 +4,7 @@ import "./ListFingerTree.mls"
 
 open Iter
 open ListFingerTree
-open LazyIterator
+open LazyArrayOld
 
 val useLFT = false
 
@@ -133,7 +133,7 @@ fun safeArgs(args) = if args is
   [] then []
 
 
-module LazyIterator with...
+module LazyArrayOld with...
 
 
 fun flatten(xs) = if 
