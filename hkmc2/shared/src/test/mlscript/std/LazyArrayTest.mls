@@ -22,14 +22,14 @@ ys1.length
 let ys2 = LazyArray.slice(2, 2)(ys1)
 //│ ys2 = [2, 3, 4, 5, 6, 7]
 
-ys2
-//│ = [2, 3, 4, 5, 6, 7]
+ys2.concat(xs, ys1)
+//│ = [2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 let ys2 = LazyArray.slice(0, 2)(ys2)
 //│ ys2 = [2, 3, 4, 5]
 
-LazyArray.concat(split, xs, split, ys2)
-//│ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5]
+ys1.concat(xs, ys2)
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 let ls = if [1,2,3,4,5] is
     [a, ..ls] then ls
@@ -344,14 +344,14 @@ mapEager(x => x + 1)(res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.618: 	mapEager(..[[1]])
+//│ ║  l.345: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.625: 	fun what(..args) = args
+//│ ║  l.352: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case

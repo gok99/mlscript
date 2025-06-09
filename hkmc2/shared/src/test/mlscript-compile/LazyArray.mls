@@ -15,7 +15,9 @@ class LazyArr extends IterableBase with
   fun toString() = "[" + this joined(", ") + "]"
   fun concat(...args) =
     let l = this.length + args.reduce((acc, x) => acc + x.length, 0)
-    Splice of [SpliceMarker, this].concat(args.flatMap(x => [SpliceMarker, x])), l
+    let a = args.reduceRight((acc, x) => acc.unshift(SpliceMarker, x); acc, [])
+    a.unshift(SpliceMarker, this)
+    Splice of a, l
 
 class View(val underlying: IterableBase, val start, val end) extends LazyArr with
 
@@ -77,7 +79,12 @@ class Splice(val bits, val len) extends LazyArr with
   fun at(i) = materialize().at(i)
   // called on eager spreads in matches
   fun slice(beg, fin) = materialize().slice(beg, fin)
-    
+  fun concat(...args) =
+    let l = this.length + args.reduce((acc, x) => acc + x.length, 0)
+    let a = args.reduceRight((acc, x) => acc.unshift(SpliceMarker, x); acc, [])
+    a.unshift(...bits)
+    Splice of a, l
+  
   fun length = len
   fun toString() = "[" + materialize() joined(", ") + "]"
 
