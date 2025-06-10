@@ -313,6 +313,6 @@ fun intersperseEager = case
 :ge
 intersperse(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.324: 	intersperse(..[[1]])
+//│ ║  l.314: 	intersperse(..[[1]])
 //│ ╙──       	           ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function expected 1 argument but got 2
