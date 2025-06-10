@@ -341,14 +341,14 @@ mapEager(x => x + 1)(res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.349: 	mapEager(..[[1]])
+//│ ║  l.342: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.356: 	fun what(..args) = args
+//│ ║  l.349: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case

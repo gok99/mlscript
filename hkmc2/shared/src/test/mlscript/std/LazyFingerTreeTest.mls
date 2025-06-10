@@ -14,7 +14,7 @@ split
 //│ = SpliceMarker
 
 let ys1 = LazyFingerTree.concat(0, split, [1, 2, 3, 4], split, [5, 6, 7], split, [8, 9])
-//│ ys1 = Splice([0, SpliceMarker, [1, 2, 3, 4], SpliceMarker, [5, 6, 7], SpliceMarker, [8, 9]], 10)
+//│ ys1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 ys1.materialize()
 //│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -26,20 +26,20 @@ ys1.length
 //│ = 10
 
 let ys2 = LazyFingerTree.slice(2, 2)(ys1)
-//│ ys2 = View([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2, 2)
+//│ ys2 = [2, 3, 4, 5, 6, 7]
 
 ys2.concat(xs, ys1)
-//│ = Splice([SpliceMarker, View([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2, 2), SpliceMarker, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], SpliceMarker, Splice([0, SpliceMarker, [1, 2, 3, 4], SpliceMarker, [5, 6, 7], SpliceMarker, [8, 9]], 10)], 26)
+//│ = [2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 let ys2 = LazyFingerTree.slice(0, 2)(ys2)
-//│ ys2 = View([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2, 4)
+//│ ys2 = [2, 3, 4, 5]
 
 ys1.concat(xs, ys2)
-//│ = Splice([0, SpliceMarker, [1, 2, 3, 4], SpliceMarker, [5, 6, 7], SpliceMarker, [8, 9], SpliceMarker, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], SpliceMarker, View([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2, 4)], 24)
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 3, 4, 5]
 
 let ls = if [1,2,3,4,5] is
     [a, ..ls] then ls
-//│ ls = View([1, 2, 3, 4, 5], 1, 0)
+//│ ls = [2, 3, 4, 5]
 
 :expect 2
 ls.at(0)
@@ -52,7 +52,7 @@ ls.at(0)
 [0, ..xs]
 //│ JS (unsanitized):
 //│ runtime.Tuple.lazyConcat(0, runtime.Tuple.split, xs)
-//│ = Splice([0, SpliceMarker, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], 11)
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 :elt
@@ -100,10 +100,10 @@ ls.at(0)
 //│     rest = Return: \
 //│     res = Lit of UnitLit of false
 //│     implct = true
-//│ = Splice([0, SpliceMarker, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 21)
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 ls
-//│ = View([1, 2, 3, 4, 5], 1, 0)
+//│ = [2, 3, 4, 5]
 
 ls.length
 //│ = 4
@@ -125,7 +125,7 @@ if ls is
 //│ } else {
 //│   throw new this.Error("match error");
 //│ }
-//│ = [2, View([1, 2, 3, 4, 5], 2, 0)]
+//│ = [2, [3, 4, 5]]
 
 mk(1,2).slice(0,1)
 //│ = [1]
