@@ -12,11 +12,11 @@ fun normIdx(i, len) =
 
 // Assume all underlying `IterableBase`s are constant-time random access
 class LazyArr extends IterableBase with
+
   fun toString() = "[" + this joined(", ") + "]"
   fun concat(...args) =
     let l = this.length + args.reduce((acc, x) => acc + x.length, 0)
-    let a = args.reduceRight((acc, x) => acc.unshift(SpliceMarker, x); acc, [])
-    a.unshift(SpliceMarker, this)
+    let a = args.reduce((acc, x) => acc.push(SpliceMarker, x); acc, [SpliceMarker, this])
     Splice of a, l
 
 class View(val underlying: IterableBase, val start, val end) extends LazyArr with
@@ -81,8 +81,7 @@ class Splice(val bits, val len) extends LazyArr with
   fun slice(beg, fin) = materialize().slice(beg, fin)
   fun concat(...args) =
     let l = this.length + args.reduce((acc, x) => acc + x.length, 0)
-    let a = args.reduceRight((acc, x) => acc.unshift(SpliceMarker, x); acc, [])
-    a.unshift(...bits)
+    let a = args.reduce((acc, x) => acc.push(SpliceMarker, x); acc, bits)
     Splice of a, l
   
   fun length = len
