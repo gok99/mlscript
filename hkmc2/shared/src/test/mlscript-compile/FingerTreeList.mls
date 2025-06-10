@@ -33,6 +33,7 @@ class LFT extends IterableBase with
   fun length = FingerTreeList.length(this)
   fun at(i) = get(i)(this)
   fun concat(other) = FingerTreeList.concat(this, other)
+  fun slice(beg, end) = FingerTreeList.slice(beg, length - end)(this)
 
 object Empty extends LFT with
   fun toString() = "[" + this joined(", ") + "]"
