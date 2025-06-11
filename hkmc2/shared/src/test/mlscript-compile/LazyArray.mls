@@ -51,19 +51,18 @@ class Splice(val bits, val len) extends LazyArr with
       if idx < bits.length and
         bits.[idx] is 
           SpliceMarker then
-            if uitr == null then 
+            if uitr == null do 
               set uitr = bits.[idx + 1].(Symbol.iterator)()
-            else ()
             let n = uitr.next()
             if n.done then
               set uitr = null
-              set idx = idx + 2
+              set idx += 2
               nextf()
             else
               n
           else
             let value = bits.[idx]
-            set idx = idx + 1
+            set idx += 1
             Result.Next of value
       else Result.Done
     Iterator of nextf
@@ -93,7 +92,7 @@ module LazyArray with...
 
 fun mk(...args) = args
 
-fun concat(...args) = 
+fun concat(...args) =
   val len = case
     [SpliceMarker, e, ...rest] then e.length + len(rest)
     [a, ...rest] then 1 + len(rest)
@@ -109,9 +108,7 @@ fun slice(beg, fin) = case
   Splice(bits, l) as s then View of s.materialize(), beg, fin
   _ as itr then View of itr, beg, fin // assume itr has O(1) at()
 
-fun isArrayLike = case
-  Array | IterableBase then true
-  else false
+fun isArrayLike = _ is Array | IterableBase
 
 val split = SpliceMarker
 

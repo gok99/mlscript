@@ -48,6 +48,11 @@ ls.at(0)
 //│ runtime.Tuple.lazyConcat(0, runtime.Tuple.split, xs)
 //│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+:sjs
+[0, ...xs]
+//│ JS (unsanitized):
+//│ [ 0, ...xs ]
+//│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 :elt
 :lot
@@ -341,14 +346,14 @@ mapEager(x => x + 1)(res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.342: 	mapEager(..[[1]])
+//│ ║  l.347: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.349: 	fun what(..args) = args
+//│ ║  l.354: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case
