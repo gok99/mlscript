@@ -1,19 +1,15 @@
-import "./RuntimeJS.mjs"
-import "./Rendering.mls"
-import "./FingerTreeList.mjs"
-import "./LazyFingerTree.mjs"
-import "./Iter.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/RuntimeJS.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/Rendering.mls"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/FingerTreeList.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/Iter.mjs"
 
-let lft = FingerTreeList
-let ftl = LazyFingerTree
+let ftl = FingerTreeList
 
 
-module Runtime with ...
+module RuntimeFingerTreeList with ...
 
 
-val FingerTreeList = lft
-val LazyFingerTree = ftl
-
+val FingerTreeList = ftl
 
 object Unit with
   fun toString() = "()"
@@ -52,7 +48,7 @@ val try_catch = RuntimeJS.try_catch
 class EffectHandle(_reified) with
   val reified = _reified
   fun resumeWith(value) =
-    Runtime.try(() => resume(reified.contTrace)(value))
+    RuntimeFingerTreeList.try(() => resume(reified.contTrace)(value))
   fun raise() =
     topLevelEffect(reified, false)
 
@@ -72,8 +68,8 @@ module Tuple with
     // * as it is not affected by users redefining `slice`
     xs.slice(i, xs.length - j)
 
-  fun lazySlice(xs, i, j) = LazyFingerTree.slice(i, j)(xs)
-  fun lazyConcat(...args) = LazyFingerTree.concat(...args)
+  fun lazySlice(xs, i, j) = FingerTreeList.slice(i, j)(xs)
+  fun lazyConcat(...args) = FingerTreeList.markerConcat(...args)
 
   fun get(xs, i) =
     // * Contrary to `xs.[i]`, this supports negative indices (Python-style)
@@ -82,7 +78,7 @@ module Tuple with
     else xs.at(i)
 
   fun isArrayLike(xs) = Iter.isArrayLike(xs)
-  val split = LazyFingerTree.split
+  val split = FingerTreeList.split
 
 module Str with
   fun startsWith(string, prefix) = string.startsWith(prefix)

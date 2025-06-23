@@ -26,6 +26,12 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
   val traceJS = NullaryCommand("traceJS")
   val runtimeClock = Command("clock")(_.trim)
   val runtimeClockPrefix = "runtime clock time"
+
+  val statefulOutput = Command("freeze")(_.trim)
+  val statatefulOutputPrefix = "freeze"
+  
+  val runtimeOverride = Command("runtime")(ln => 
+    wd / os.RelPath(ln.trim))
   val expect = Command("expect"): ln =>
     ln.trim
   
@@ -53,7 +59,13 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
       case ReplHost.Result(msg) =>
         if msg.startsWith("Uncaught") then output(s"Failed to load $name: $msg")
       case r => output(s"Failed to load $name: $r")
-    importRuntimeModule(runtimeNme, runtimeFile)
+    
+    if runtimeOverride.isSet then
+      val runtimeFile = runtimeOverride.get.get
+      output(s"Overriding runtime: ${runtimeFile}")
+      importRuntimeModule(runtimeNme, runtimeFile)
+    else
+      importRuntimeModule(runtimeNme, runtimeFile)
     if importQQ.isSet then importRuntimeModule(termNme, termFile)
     h
   
@@ -172,7 +184,6 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
       startTime.foreach: start =>
         val endTime = System.nanoTime()
         val elapsedMs = (endTime - start) / 1_000_000.0
-        val key = (blk, timingId.get)
         statefulComments.find(_.startsWith(runtimeClockPrefix)) match
           case S(time) => 
             val cachedId = time.stripPrefix(s"${runtimeClockPrefix} (").split(')').headOption.getOrElse("")
@@ -221,6 +232,20 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
             case "undefined" if anon =>
             case "()" if anon =>
             case _ =>
-              output(s"${if anon then "" else s"$nme "}= ${result.indentNewLines("| ")}")
+              val outputStr = s"${if anon then "" else s"$nme "}= ${result.indentNewLines("| ")}"
+              val currId = statefulOutput.get.getOrElse("")
+              // TODO: avoid execution if cache not invalidated
+              if statefulOutput.isSet then
+                statefulComments.find(_.startsWith(statatefulOutputPrefix)) match
+                  case S(prev) => 
+                    val cachedId = prev.stripPrefix(s"${statatefulOutputPrefix} (").split(')').headOption.getOrElse("")
+                    if cachedId == currId then
+                      output.stateful(prev)
+                    else
+                      output.stateful(s"${statatefulOutputPrefix} (${currId}): ${outputStr}")
+                  case N => 
+                    output.stateful(s"${statatefulOutputPrefix} (${currId}): ${outputStr}")
+              else
+                output(outputStr)
       
 

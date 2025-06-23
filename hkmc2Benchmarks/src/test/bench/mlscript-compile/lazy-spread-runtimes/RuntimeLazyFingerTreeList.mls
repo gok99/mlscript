@@ -1,18 +1,18 @@
-import "./RuntimeJS.mjs"
-import "./Rendering.mls"
-import "./FingerTreeList.mjs"
-import "./LazyFingerTree.mjs"
-import "./Iter.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/RuntimeJS.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/Rendering.mls"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/FingerTreeList.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/LazyFingerTree.mjs"
+import "../../../../../../hkmc2/shared/src/test/mlscript-compile/Iter.mjs"
 
-let lft = FingerTreeList
-let ftl = LazyFingerTree
-
-
-module Runtime with ...
+let ftl = FingerTreeList
+let lft = LazyFingerTree
 
 
-val FingerTreeList = lft
-val LazyFingerTree = ftl
+module RuntimeLazyFingerTreeList with ...
+
+
+val FingerTreeList = ftl
+val LazyFingerTree = lft
 
 
 object Unit with
@@ -52,7 +52,7 @@ val try_catch = RuntimeJS.try_catch
 class EffectHandle(_reified) with
   val reified = _reified
   fun resumeWith(value) =
-    Runtime.try(() => resume(reified.contTrace)(value))
+    RuntimeLazyFingerTreeList.try(() => resume(reified.contTrace)(value))
   fun raise() =
     topLevelEffect(reified, false)
 

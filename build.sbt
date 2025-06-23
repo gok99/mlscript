@@ -153,8 +153,7 @@ lazy val compiler = crossProject(JSPlatform, JVMPlatform).in(file("compiler"))
 lazy val compilerJVM = compiler.jvm
 lazy val compilerJS = compiler.js
 
-
-lazy val benchmark = project.in(file("benchmark"))
+lazy val hkmc2Benchmarks = project.in(file("hkmc2Benchmarks"))
   .settings(
     name := "benchmark",
     scalaVersion := scala3Version,
@@ -162,6 +161,8 @@ lazy val benchmark = project.in(file("benchmark"))
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.18" % "test",
     watchSources += WatchSource(
       baseDirectory.value/"src"/"test"/"bench", "*.mls", NothingFilter),
+
+    Test/run/fork := true, // so that CTRL+C actually terminates the watcher
   )
   .dependsOn(hkmc2JVM)
   .dependsOn(hkmc2DiffTests % "compile->compile;test->test")

@@ -160,9 +160,4 @@ fun slice(beg, end)(itr) =
     else throw "slice: index out of bounds"
   LazyItrBoxed of itr
 
-fun isArrayLike = case
-  Array then true
-  IterableBase then true
-  else false
-
 val split = SpliceMarker

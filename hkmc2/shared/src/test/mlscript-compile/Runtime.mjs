@@ -4,6 +4,7 @@ import RuntimeJS from "./RuntimeJS.mjs";
 import Rendering from "./Rendering.mjs";
 import FingerTreeList from "./FingerTreeList.mjs";
 import LazyFingerTree from "./LazyFingerTree.mjs";
+import Iter from "./Iter.mjs";
 let Runtime1, lft, ftl;
 lft = FingerTreeList;
 ftl = LazyFingerTree;
@@ -91,7 +92,7 @@ ftl = LazyFingerTree;
         }
       } 
       static isArrayLike(xs3) {
-        return runtime.safeCall(Runtime.LazyFingerTree.isArrayLike(xs3))
+        return runtime.safeCall(Iter.isArrayLike(xs3))
       }
       static toString() { return "Tuple"; }
     });

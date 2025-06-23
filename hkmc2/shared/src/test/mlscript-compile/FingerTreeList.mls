@@ -45,7 +45,7 @@ class Single(val e) extends LFT with
 class Deep[T](val size, val prefix: Array[T], val middle, val suffix: Array[T]) extends LFT with // TODO: middle: FingerTreeList[Node[T]]
   fun toString() = "[" + [...this].join(", ") + "]"
 
-// amortized O(log n) - is there a proper way to match on tuples?
+// amortized O(log n)
 fun concatMiddle(ft1, middle, ft2) = if [ft1, middle, ft2] is
   [Empty, [], right] then right
   [Empty, [x, ...xs], right] then cons(x, concatMiddle(Empty, xs, right))
@@ -111,6 +111,8 @@ fun repeatPopBack(n)(xs) =
 fun normIdx(idx, len) =
   if idx < 0 then idx + len
   else idx
+
+object SpliceMarker
 
 
 module FingerTreeList with...
@@ -179,6 +181,21 @@ fun popBack(ft) = if safeInput(ft) is
 
 // amortized O(log n)
 fun (++) concat(ft1, ft2) = concatMiddle(safeInput(ft1), [], safeInput(ft2))
+
+fun markerConcat(...arr) =
+  let acc = FingerTreeList.mk()
+  let idx = 0
+  while idx < arr.length do
+    if arr.[idx] is SpliceMarker then
+      let ftl = arr.[idx + 1]
+      set acc = acc ++ safeInput(ftl)
+      set idx = idx + 2
+    else
+      set acc = acc :+ arr.[idx]
+      set idx = idx + 1
+  acc
+
+val split = SpliceMarker
 
 // amortized O(log n)
 fun ith(idx) = case

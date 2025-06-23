@@ -108,8 +108,6 @@ fun slice(beg, fin) = case
   Splice(bits, l) as s then View of s.materialize(), beg, fin
   _ as itr then View of itr, beg, fin // assume itr has O(1) at()
 
-fun isArrayLike = _ is Array | IterableBase
-
 val split = SpliceMarker
 
 fun isLazyArray = case
