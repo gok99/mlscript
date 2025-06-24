@@ -5,8 +5,13 @@
 
 import "../../../../../hkmc2/shared/src/test/mlscript-compile/LazyArray.mls"
 import "../../../../../hkmc2/shared/src/test/mlscript-compile/FingerTreeList.mls"
+import "../mlscript-compile/Benchmark.mls"
 
 open LazyArray
+open Benchmark
+
+let suite = mkSuite()
+//│ suite = [object Object]
 
 let xs = mk(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 //│ xs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -47,15 +52,11 @@ let ls = if [1,2,3,4,5] is
 ls.at(0)
 //│ = 2
 
-// // * TODO for later: support the lazy spread syntax
-
-// // TODO should have lazy spread semantics
 :sjs
 [0, ..xs]
 //│ JS (unsanitized):
 //│ runtime.Tuple.lazyConcat(0, runtime.Tuple.split, xs)
 //│ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
 
 :elt
 :lot
@@ -138,13 +139,13 @@ fun buildLazy(i) =
 //│ JS (unsanitized):
 //│ let buildLazy;
 //│ buildLazy = function buildLazy(i) {
-//│   let scrut1, tmp8, tmp9, tmp10;
+//│   let scrut1, tmp9, tmp10, tmp11;
 //│   scrut1 = i > 0;
 //│   if (scrut1 === true) {
-//│     tmp8 = i - 1;
-//│     tmp9 = buildLazy(tmp8);
-//│     tmp10 = - i;
-//│     return runtime.Tuple.lazyConcat(i, runtime.Tuple.split, tmp9, tmp10)
+//│     tmp9 = i - 1;
+//│     tmp10 = buildLazy(tmp9);
+//│     tmp11 = - i;
+//│     return runtime.Tuple.lazyConcat(i, runtime.Tuple.split, tmp10, tmp11)
 //│   } else {
 //│     return []
 //│   }
@@ -156,16 +157,16 @@ fun buildEager(i) =
 //│ JS (unsanitized):
 //│ let buildEager;
 //│ buildEager = function buildEager(i) {
-//│   let scrut1, tmp8, tmp9, tmp10;
+//│   let scrut1, tmp9, tmp10, tmp11;
 //│   scrut1 = i > 0;
 //│   if (scrut1 === true) {
-//│     tmp8 = i - 1;
-//│     tmp9 = buildEager(tmp8);
-//│     tmp10 = - i;
+//│     tmp9 = i - 1;
+//│     tmp10 = buildEager(tmp9);
+//│     tmp11 = - i;
 //│     return [
 //│       i,
-//│       ...tmp9,
-//│       tmp10
+//│       ...tmp10,
+//│       tmp11
 //│     ]
 //│   } else {
 //│     return []
@@ -180,7 +181,7 @@ fun funnySum(xs) = if xs is
 //│ JS (unsanitized):
 //│ let funnySum;
 //│ funnySum = function funnySum(xs1) {
-//│   let last0, rest2, first02, a2, ls3, b, tmp8, tmp9;
+//│   let last0, rest2, first02, a2, ls3, b, tmp9, tmp10;
 //│   if (runtime.Tuple.isArrayLike(xs1) && xs1.length >= 2) {
 //│     first02 = xs1.at(0);
 //│     rest2 = runtime.safeCall(runtime.Tuple.lazySlice(xs1, 1, 1));
@@ -188,9 +189,9 @@ fun funnySum(xs) = if xs is
 //│     a2 = first02;
 //│     ls3 = rest2;
 //│     b = last0;
-//│     tmp8 = funnySum(ls3);
-//│     tmp9 = a2 + tmp8;
-//│     return tmp9 - b
+//│     tmp9 = funnySum(ls3);
+//│     tmp10 = a2 + tmp9;
+//│     return tmp10 - b
 //│   } else if (runtime.Tuple.isArrayLike(xs1) && xs1.length === 0) {
 //│     return 0
 //│   } else {
@@ -206,7 +207,7 @@ fun funnySumEager(xs) = if xs is
 //│ JS (unsanitized):
 //│ let funnySumEager;
 //│ funnySumEager = function funnySumEager(xs1) {
-//│   let last0, rest2, first02, a2, ls3, b, tmp8, tmp9;
+//│   let last0, rest2, first02, a2, ls3, b, tmp9, tmp10;
 //│   if (runtime.Tuple.isArrayLike(xs1) && xs1.length >= 2) {
 //│     first02 = xs1.at(0);
 //│     rest2 = runtime.safeCall(runtime.Tuple.slice(xs1, 1, 1));
@@ -214,9 +215,9 @@ fun funnySumEager(xs) = if xs is
 //│     a2 = first02;
 //│     ls3 = rest2;
 //│     b = last0;
-//│     tmp8 = funnySumEager(ls3);
-//│     tmp9 = a2 + tmp8;
-//│     return tmp9 - b
+//│     tmp9 = funnySumEager(ls3);
+//│     tmp10 = a2 + tmp9;
+//│     return tmp10 - b
 //│   } else if (runtime.Tuple.isArrayLike(xs1) && xs1.length === 0) {
 //│     return 0
 //│   } else {
@@ -226,6 +227,7 @@ fun funnySumEager(xs) = if xs is
 
 :clock 321984
 :silent
+suite.add("buildLazy", () => buildLazy(1000))
 let res = buildLazy(1000)
 //+ runtime clock time (321984): 3.496362 ms
 
@@ -233,6 +235,12 @@ let res = buildLazy(1000)
 res |> funnySumEager
 //+ runtime clock time (321984): 21.602414 ms
 //│ = 1001000
+
+suite.add("lazyListFunnySumEager", () => 
+  let res = buildLazy(1000)
+  res |> funnySumEager)
+//│ = [object Object]
+
 
 :silent
 :clock 321984
@@ -246,23 +254,33 @@ res |> funnySum
 //+ runtime clock time (321984): 15.21843 ms
 //│ = 1001000
 
+suite.add("lazyListFunnySum", () => 
+  let res = buildLazy(1000)
+  res |> funnySum)
+//│ = [object Object]
 
 //=========================================================================
 
 :clock 321984c
 :silent
-let res = buildEager(3000)
+let res = buildEager(1000)
 //+ runtime clock time (321984c): 128.79833 ms
 
 :clock 321983
 res |> funnySumEager
 //+ runtime clock time (321983): 90.687924 ms
-//│ = 9003000
+//│ = 1001000
+
+suite.add("eagerListFunnySumEager", () => res |> funnySumEager)
+//│ = [object Object]
 
 :clock 32198
 res |> funnySum
 //+ runtime clock time (32198): 1.792058 ms
-//│ = 9003000
+//│ = 1001000
+
+suite.add("eagerListFunnySum", () => res |> funnySum)
+//│ = [object Object]
 
 // ========================================================================
 
@@ -278,25 +296,25 @@ fun map(f) = case
 //│ JS (unsanitized):
 //│ let map;
 //│ map = function map(f) {
-//│   let lambda;
-//│   lambda = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp13, tmp14, tmp15;
+//│   let lambda5;
+//│   lambda5 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.lazySlice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp13 = runtime.safeCall(f(a2));
-//│       tmp14 = map(f);
-//│       tmp15 = runtime.safeCall(tmp14(rest3));
-//│       return runtime.Tuple.lazyConcat(tmp13, runtime.Tuple.split, tmp15)
+//│       tmp15 = runtime.safeCall(f(a2));
+//│       tmp16 = map(f);
+//│       tmp17 = runtime.safeCall(tmp16(rest3));
+//│       return runtime.Tuple.lazyConcat(tmp15, runtime.Tuple.split, tmp17)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda
+//│   return lambda5
 //│ };
 
 :sjs
@@ -307,20 +325,20 @@ fun mapEager(f) = case
 //│ JS (unsanitized):
 //│ let mapEager;
 //│ mapEager = function mapEager(f) {
-//│   let lambda;
-//│   lambda = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp13, tmp14, tmp15;
+//│   let lambda5;
+//│   lambda5 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.slice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp13 = runtime.safeCall(f(a2));
-//│       tmp14 = mapEager(f);
-//│       tmp15 = runtime.safeCall(tmp14(rest3));
+//│       tmp15 = runtime.safeCall(f(a2));
+//│       tmp16 = mapEager(f);
+//│       tmp17 = runtime.safeCall(tmp16(rest3));
 //│       return [
-//│         tmp13,
-//│         ...tmp15
+//│         tmp15,
+//│         ...tmp17
 //│       ]
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
@@ -328,16 +346,14 @@ fun mapEager(f) = case
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda
+//│   return lambda5
 //│ };
 
 :silent
 let res = buildEager(1000)
 
 :silent
-:clock 321984
 let lm = map(x => x + 1)(res)
-//+ runtime clock time (321984): 2.606955 ms
 
 :clock 321984
 :silent
@@ -349,6 +365,18 @@ lm.materialize()
 mapEager(x => x + 1)(res)
 //+ runtime clock time (321984): 48.831156 ms
 
+suite.add("eagerListMapLazy", () => 
+  let res = buildEager(1000)
+  map(x => x + 1)(res)
+  lm.materialize())
+//│ = [object Object]
+
+
+suite.add("eagerListMapEager", () => 
+  let res = buildEager(1000)
+  mapEager(x => x + 1)(res))
+//│ = [object Object]
+
 :silent
 let res = FingerTreeList.mk(...res)
 
@@ -356,15 +384,15 @@ let res = FingerTreeList.mk(...res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.1191: 	mapEager(..[[1]])
-//│ ╙──        	        ^^^^^^^^^
+//│ ║  l.385: 	mapEager(..[[1]])
+//│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.1199: 	fun what(..args) = args
-//│ ╙──        	           ^^^^
+//│ ║  l.392: 	fun what(..args) = args
+//│ ╙──       	           ^^^^
 
 fun silly = case
   [a, b, ..xs] then [..xs, ..silly([a, ..xs])]
@@ -386,13 +414,30 @@ let xs = buildEager(150)
 let ys = silly(xs)
 //+ runtime clock time (3219): 4.003477 ms
 
-// materializes
-:clock 3219
-ys.at(0)
-//+ runtime clock time (3219): 54.11664 ms
-//│ = 148
+suite.add("sillyLazyNoMaterialize", () =>
+  let xs = buildEager(150)
+  let ys = silly(xs))
+//│ = [object Object]
+
+suite.add("sillyLazy", () => 
+  let xs = buildEager(150)
+  let ys = silly(xs)
+  ys.materialize())
+//│ = [object Object]
 
 :clock 3219
 :silent
 sillyEager(xs)
 //+ runtime clock time (3219): 90.120174 ms
+
+suite.add("sillyEager", () => 
+  let xs = buildEager(150)
+  sillyEager(xs))
+//│ = [object Object]
+
+:silent
+suite |> runSuite
+let fName = "src/test/bench/LazySpreads/LazyArrayTest.json"
+let jsonStr = JSON.stringify(suite.map((res, _, _) => res), null, 2)
+
+fs.writeFile(fName, jsonStr, (err) => err)

@@ -52,9 +52,6 @@ let ls = if [1,2,3,4,5] is
 ls.at(0)
 //│ = 2
 
-// // * TODO for later: support the lazy spread syntax
-
-// // TODO should have lazy spread semantics
 :sjs
 [0, ..xs]
 //│ JS (unsanitized):
@@ -230,7 +227,7 @@ fun funnySumEager(xs) = if xs is
 
 :clock 32198
 :silent
-// suite.add("buildLazy", () => buildLazy(1000))
+suite.add("buildLazy", () => buildLazy(1000))
 let res = buildLazy(1000)
 //+ runtime clock time (32198): 7.542422 ms
 
@@ -239,9 +236,10 @@ res |> funnySumEager
 //+ runtime clock time (321946): 9.619147 ms
 //│ = 1001000
 
-// suite.add("lazyListFunnySumEager", () => 
-// let res = buildLazy(1000)
-// res |> funnySumEager)
+suite.add("lazyListFunnySumEager", () => 
+  let res = buildLazy(1000)
+  res |> funnySumEager)
+//│ = [object Object]
 
 
 :silent
@@ -256,30 +254,33 @@ res |> funnySum
 //+ runtime clock time (321945): 7.480485 ms
 //│ = 1001000
 
-// suite.add("lazyListFunnySum", () => 
-// let res = buildLazy(1000)
-// res |> funnySum)
+suite.add("lazyListFunnySum", () => 
+  let res = buildLazy(1000)
+  res |> funnySum)
+//│ = [object Object]
 
-// //=========================================================================
+//=========================================================================
 
 :clock 321984c
 :silent
-let res = buildEager(3000)
+let res = buildEager(1000)
 //+ runtime clock time (321984c): 105.496331 ms
 
 :clock 321983
 res |> funnySumEager
 //+ runtime clock time (321983): 77.272964 ms
-//│ = 9003000
+//│ = 1001000
 
-// suite.add("eagerListFunnySumEager", () => res |> funnySumEager)
+suite.add("eagerListFunnySumEager", () => res |> funnySumEager)
+//│ = [object Object]
 
 :clock 321983
 res |> funnySum
 //+ runtime clock time (321983): 2.021114 ms
-//│ = 9003000
+//│ = 1001000
 
-// suite.add("eagerListFunnySum", () => res |> funnySum)
+suite.add("eagerListFunnySum", () => res |> funnySum)
+//│ = [object Object]
 
 // ========================================================================
 
@@ -295,25 +296,25 @@ fun map(f) = case
 //│ JS (unsanitized):
 //│ let map;
 //│ map = function map(f) {
-//│   let lambda;
-//│   lambda = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp14, tmp15, tmp16;
+//│   let lambda5;
+//│   lambda5 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.lazySlice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp14 = runtime.safeCall(f(a2));
-//│       tmp15 = map(f);
-//│       tmp16 = runtime.safeCall(tmp15(rest3));
-//│       return runtime.Tuple.lazyConcat(tmp14, runtime.Tuple.split, tmp16)
+//│       tmp15 = runtime.safeCall(f(a2));
+//│       tmp16 = map(f);
+//│       tmp17 = runtime.safeCall(tmp16(rest3));
+//│       return runtime.Tuple.lazyConcat(tmp15, runtime.Tuple.split, tmp17)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda
+//│   return lambda5
 //│ };
 
 :sjs
@@ -324,20 +325,20 @@ fun mapEager(f) = case
 //│ JS (unsanitized):
 //│ let mapEager;
 //│ mapEager = function mapEager(f) {
-//│   let lambda;
-//│   lambda = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp14, tmp15, tmp16;
+//│   let lambda5;
+//│   lambda5 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.slice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp14 = runtime.safeCall(f(a2));
-//│       tmp15 = mapEager(f);
-//│       tmp16 = runtime.safeCall(tmp15(rest3));
+//│       tmp15 = runtime.safeCall(f(a2));
+//│       tmp16 = mapEager(f);
+//│       tmp17 = runtime.safeCall(tmp16(rest3));
 //│       return [
-//│         tmp14,
-//│         ...tmp16
+//│         tmp15,
+//│         ...tmp17
 //│       ]
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
@@ -345,7 +346,7 @@ fun mapEager(f) = case
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda
+//│   return lambda5
 //│ };
 
 :silent
@@ -364,16 +365,17 @@ lm.materialize()
 mapEager(x => x + 1)(res)
 //+ runtime clock time (321984): 55.073153 ms
 
-// suite.add("eagerListMapLazy", () => 
-// let res = buildEager(1000)
-// map(x => x + 1)(res)
-// lm.materialize())
+suite.add("eagerListMapLazy", () => 
+  let res = buildEager(1000)
+  map(x => x + 1)(res)
+  lm.materialize())
+//│ = [object Object]
 
 
-// suite.add("eagerListMapEager", () => 
-// let res = buildEager(1000)
-// mapEager(x => x + 1)(res))
-
+suite.add("eagerListMapEager", () => 
+  let res = buildEager(1000)
+  mapEager(x => x + 1)(res))
+//│ = [object Object]
 
 :silent
 let res = FingerTreeList.mk(...res)
@@ -382,15 +384,15 @@ let res = FingerTreeList.mk(...res)
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.1256: 	mapEager(..[[1]])
-//│ ╙──        	        ^^^^^^^^^
+//│ ║  l.385: 	mapEager(..[[1]])
+//│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.1264: 	fun what(..args) = args
-//│ ╙──        	           ^^^^
+//│ ║  l.392: 	fun what(..args) = args
+//│ ╙──       	           ^^^^
 
 fun silly = case
   [a, b, ..xs] then [..xs, ..silly([a, ..xs])]
@@ -418,105 +420,25 @@ ys.at(0)
 //+ runtime clock time (32192): 6.317162 ms
 //│ = 148
 
-:clock 32192
-ys.at(0)
-//+ runtime clock time (32192): 0.385497 ms
-//│ = 148
+suite.add("sillyLazy", () => 
+  let xs = buildEager(150)
+  let ys = silly(xs)
+  ys.materialize())
+//│ = [object Object]
 
 :clock 32133
 :silent
 sillyEager(xs)
 //+ runtime clock time (32133): 104.117249 ms
 
-:freeze 123
-let x = Date.now()
-//+ freeze (123): x = 1750689979091
-
-suite
-  .add("test", () => 1) |> runSuite
+suite.add("sillyEager", () => 
+  let xs = buildEager(150)
+  sillyEager(xs))
 //│ = [object Object]
 
-suite.forEach((name, result, sth) => console.log(name, ":", result))
-//│ > Benchmark {
-//│ >   name: 'test',
-//│ >   options: {
-//│ >     async: false,
-//│ >     defer: false,
-//│ >     delay: 0.005,
-//│ >     id: undefined,
-//│ >     initCount: 1,
-//│ >     maxTime: 5,
-//│ >     minSamples: 5,
-//│ >     minTime: 0.05,
-//│ >     name: undefined,
-//│ >     onAbort: undefined,
-//│ >     onComplete: undefined,
-//│ >     onCycle: undefined,
-//│ >     onError: undefined,
-//│ >     onReset: undefined,
-//│ >     onStart: undefined
-//│ >   },
-//│ >   async: false,
-//│ >   defer: false,
-//│ >   delay: 0.005,
-//│ >   initCount: 1,
-//│ >   maxTime: 5,
-//│ >   minSamples: 5,
-//│ >   minTime: 0.05,
-//│ >   id: 1,
-//│ >   fn: [Function (anonymous)],
-//│ >   stats: {
-//│ >     moe: 2.3577873615610556e-10,
-//│ >     rme: 3.180090984504706,
-//│ >     sem: 1.2029527354903345e-10,
-//│ >     deviation: 1.1220396146868437e-9,
-//│ >     mean: 7.414213533668053e-9,
-//│ >     sample: [
-//│ >        6.956830612995219e-9,  7.468502082471158e-9, 6.396404291646961e-9,
-//│ >          8.7142331144019e-9,   8.25477595724445e-9, 8.817329269817463e-9,
-//│ >        7.721878835009088e-9,  6.841422881044332e-9, 7.737812798564853e-9,
-//│ >        6.392690708664963e-9,  6.812091844098439e-9, 6.346908308579555e-9,
-//│ >        1.010725015549248e-8, 1.0767570713502085e-8, 1.262755424148194e-8,
-//│ >        7.248985930982211e-9,   8.68026483243938e-9, 6.488546430870454e-9,
-//│ >        6.602469133303827e-9,  7.889668076524184e-9, 6.937786816742261e-9,
-//│ >       6.9003169554667265e-9, 6.4075107200316945e-9, 6.400836908152992e-9,
-//│ >        6.617589693893904e-9,   8.43017650815689e-9,  8.34642484934907e-9,
-//│ >        7.971169916945449e-9,  8.777783315394407e-9, 7.921545015278552e-9,
-//│ >         8.21312329968641e-9,  7.745657436879287e-9, 7.792050548938736e-9,
-//│ >        8.286333219784083e-9,  8.801009723956418e-9, 7.791292724697544e-9,
-//│ >        6.397724402180904e-9,  6.674974356548273e-9, 6.409494142515737e-9,
-//│ >        6.507377560028572e-9,  7.369037510086298e-9,   6.5531598336202e-9,
-//│ >        7.396562556803613e-9,  6.420356416466606e-9, 7.366744810308028e-9,
-//│ >        8.247087638812693e-9,  6.381733184897098e-9, 7.763830924870662e-9,
-//│ >        6.344675187372075e-9,  7.452986625686055e-9, 6.342955377927367e-9,
-//│ >        6.350655686837829e-9,  9.188215535789076e-9, 7.764591152493691e-9,
-//│ >        7.300872794438625e-9,  6.837639666526975e-9, 7.825352060653262e-9,
-//│ >        6.383323717697758e-9,    7.8285039061912e-9, 6.521576739918793e-9,
-//│ >        6.937891933074165e-9,  6.411109847578788e-9, 8.277617545294578e-9,
-//│ >         8.85750829767579e-9,  6.901153205852058e-9, 6.354907522294212e-9,
-//│ >        9.206297695270663e-9,  6.413312483785078e-9, 6.640351996773903e-9,
-//│ >        6.557023712650655e-9,  8.414533528251816e-9, 6.435367686430013e-9,
-//│ >       6.8869299921434715e-9,  6.478112211874047e-9, 6.458708065888587e-9,
-//│ >        7.038147741447218e-9,  7.900094073424834e-9, 6.434916609607431e-9,
-//│ >        6.397959933600885e-9,  6.884336996129417e-9,  8.76886107656074e-9,
-//│ >        6.872458344649256e-9,  7.798492118235762e-9,  8.21882867517877e-9,
-//│ >        6.341599238102659e-9, 6.3728224569974904e-9, 6.934004779188028e-9
-//│ >     ],
-//│ >     variance: 1.2589728969266009e-18
-//│ >   },
-//│ >   times: {
-//│ >     cycle: 0.0586132652741782,
-//│ >     elapsed: 5.405,
-//│ >     period: 7.414213533668053e-9,
-//│ >     timeStamp: 1750689979097
-//│ >   },
-//│ >   running: false,
-//│ >   count: 7905527,
-//│ >   compiled: [Function: anonymous],
-//│ >   cycles: 5,
-//│ >   hz: 134876072.21709833
-//│ > } : 0
-//│ = [object Object]
+:silent
+suite |> runSuite
+let fName = "src/test/bench/LazySpreads/LazyFingerTreeListTest.json"
+let jsonStr = JSON.stringify(suite.map((res, _, _) => res), null, 2)
 
-console.log(1)
-//│ > 1
+fs.writeFile(fName, jsonStr, (err) => null)

@@ -12,7 +12,7 @@ object BenchTestState extends DiffTestRunner.State:
     .filter(_.toIO.isFile)
     .filter(_.ext == "mls")
 
-  override val TimeLimit = Span(120, Seconds)
+  override val TimeLimit = Span(1, Hour)
 
 class BenchTestRunner
   extends DiffTestRunnerBase(BenchTestState)
