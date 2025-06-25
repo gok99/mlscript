@@ -64,7 +64,7 @@ class Splice(val bits) extends LazyItr with
       else Result.Done
     Iterator of nextf
 
-  let lengthHelper =Add commentMore actions
+  let lengthHelper =
     val go = case
       [SpliceMarker, e, ...rest] then e.length + go(rest)
       [a, ...rest] then 1 + go(rest)
@@ -73,10 +73,10 @@ class Splice(val bits) extends LazyItr with
 
   let flattenHelper =
     val go = case
-      [SpliceMarker, e, ..rest] then LazyIterator.flatten(e) ++ go(rest)
-      [a, ...rest] then ListFingerTree.mk(a) ++ go(rest)
+      [SpliceMarker, e, ..rest] then LazyArrayOld.flatten(e) ++ go(rest)
+      [a, ...rest] then FingerTreeList.mk(a) ++ go(rest)
       [] then []
-    goAdd comment
+    go
 
   fun flatten() = 
     flattenHelper(bits)
