@@ -117,7 +117,7 @@ if ls is
 //│ JS (unsanitized):
 //│ let rest1, first01, a1, ls2;
 //│ if (runtime.Tuple.isArrayLike(ls) && ls.length >= 1) {
-//│   first01 = ls.at(0);
+//│   first01 = ls[0];
 //│   rest1 = runtime.safeCall(runtime.Tuple.lazySlice(ls, 1, 0));
 //│   a1 = first01;
 //│   ls2 = rest1;
@@ -128,7 +128,7 @@ if ls is
 //│ } else {
 //│   throw new this.Error("match error");
 //│ }
-//│ = [2, [3, 4, 5]]
+//│ = [undefined, [3, 4, 5]]
 
 mk(1,2).slice(0,1)
 //│ = [1]
@@ -183,7 +183,7 @@ fun funnySum(xs) = if xs is
 //│ funnySum = function funnySum(xs1) {
 //│   let last0, rest2, first02, a2, ls3, b, tmp9, tmp10;
 //│   if (runtime.Tuple.isArrayLike(xs1) && xs1.length >= 2) {
-//│     first02 = xs1.at(0);
+//│     first02 = xs1[0];
 //│     rest2 = runtime.safeCall(runtime.Tuple.lazySlice(xs1, 1, 1));
 //│     last0 = runtime.Tuple.get(xs1, -1);
 //│     a2 = first02;
@@ -209,7 +209,7 @@ fun funnySumEager(xs) = if xs is
 //│ funnySumEager = function funnySumEager(xs1) {
 //│   let last0, rest2, first02, a2, ls3, b, tmp9, tmp10;
 //│   if (runtime.Tuple.isArrayLike(xs1) && xs1.length >= 2) {
-//│     first02 = xs1.at(0);
+//│     first02 = xs1[0];
 //│     rest2 = runtime.safeCall(runtime.Tuple.slice(xs1, 1, 1));
 //│     last0 = runtime.Tuple.get(xs1, -1);
 //│     a2 = first02;
@@ -237,7 +237,7 @@ let res = buildLazy(1000)
 :clock 321946
 res |> funnySumEager
 //+ runtime clock time (321946): 9.619147 ms
-//│ = 1001000
+//│ = NaN
 
 suite.add("lazyListFunnySumEager", () => 
   let res = buildLazy(1000)
@@ -255,7 +255,7 @@ let res = buildLazy(1000)
 // slowdown from logn random access
 res |> funnySum
 //+ runtime clock time (321945): 7.480485 ms
-//│ = 1001000
+//│ = NaN
 
 suite.add("lazyListFunnySum1000", () => 
   let res = buildLazy(1000)
@@ -294,7 +294,7 @@ suite.add("eagerListFunnySumEager10", () => res10 |> funnySumEager)
 :clock 321983
 res |> funnySum
 //+ runtime clock time (321983): 2.021114 ms
-//│ = 1001000
+//│ = NaN
 
 suite.add("eagerListFunnySum1000", () => res |> funnySum)
 suite.add("eagerListFunnySum100", () => res100 |> funnySum)
@@ -319,7 +319,7 @@ fun map(f) = case
 //│   lambda18 = (undefined, function (caseScrut) {
 //│     let rest2, first02, a2, rest3, tmp30, tmp31, tmp32;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
-//│       first02 = caseScrut.at(0);
+//│       first02 = caseScrut[0];
 //│       rest2 = runtime.safeCall(runtime.Tuple.lazySlice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
@@ -348,7 +348,7 @@ fun mapEager(f) = case
 //│   lambda18 = (undefined, function (caseScrut) {
 //│     let rest2, first02, a2, rest3, tmp30, tmp31, tmp32;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
-//│       first02 = caseScrut.at(0);
+//│       first02 = caseScrut[0];
 //│       rest2 = runtime.safeCall(runtime.Tuple.slice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
