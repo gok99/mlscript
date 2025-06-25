@@ -263,6 +263,7 @@ suite.add("lazyListFunnySum", () =>
 
 :clock 321984c
 :silent
+suite.add("buildEager", () => buildEager(1000))
 let res = buildEager(1000)
 //+ runtime clock time (321984c): 128.79833 ms
 
@@ -296,25 +297,25 @@ fun map(f) = case
 //│ JS (unsanitized):
 //│ let map;
 //│ map = function map(f) {
-//│   let lambda5;
-//│   lambda5 = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
+//│   let lambda6;
+//│   lambda6 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp16, tmp17, tmp18;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.lazySlice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp15 = runtime.safeCall(f(a2));
-//│       tmp16 = map(f);
-//│       tmp17 = runtime.safeCall(tmp16(rest3));
-//│       return runtime.Tuple.lazyConcat(tmp15, runtime.Tuple.split, tmp17)
+//│       tmp16 = runtime.safeCall(f(a2));
+//│       tmp17 = map(f);
+//│       tmp18 = runtime.safeCall(tmp17(rest3));
+//│       return runtime.Tuple.lazyConcat(tmp16, runtime.Tuple.split, tmp18)
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
 //│     } else {
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda5
+//│   return lambda6
 //│ };
 
 :sjs
@@ -325,20 +326,20 @@ fun mapEager(f) = case
 //│ JS (unsanitized):
 //│ let mapEager;
 //│ mapEager = function mapEager(f) {
-//│   let lambda5;
-//│   lambda5 = (undefined, function (caseScrut) {
-//│     let rest2, first02, a2, rest3, tmp15, tmp16, tmp17;
+//│   let lambda6;
+//│   lambda6 = (undefined, function (caseScrut) {
+//│     let rest2, first02, a2, rest3, tmp16, tmp17, tmp18;
 //│     if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length >= 1) {
 //│       first02 = caseScrut.at(0);
 //│       rest2 = runtime.safeCall(runtime.Tuple.slice(caseScrut, 1, 0));
 //│       a2 = first02;
 //│       rest3 = rest2;
-//│       tmp15 = runtime.safeCall(f(a2));
-//│       tmp16 = mapEager(f);
-//│       tmp17 = runtime.safeCall(tmp16(rest3));
+//│       tmp16 = runtime.safeCall(f(a2));
+//│       tmp17 = mapEager(f);
+//│       tmp18 = runtime.safeCall(tmp17(rest3));
 //│       return [
-//│         tmp15,
-//│         ...tmp17
+//│         tmp16,
+//│         ...tmp18
 //│       ]
 //│     } else if (runtime.Tuple.isArrayLike(caseScrut) && caseScrut.length === 0) {
 //│       return []
@@ -346,11 +347,11 @@ fun mapEager(f) = case
 //│       throw new globalThis.Error("match error");
 //│     }
 //│   });
-//│   return lambda5
+//│   return lambda6
 //│ };
 
 :silent
-let res = buildEager(1000)
+let res = buildEager(1500)
 
 :silent
 let lm = map(x => x + 1)(res)
@@ -366,32 +367,43 @@ mapEager(x => x + 1)(res)
 //+ runtime clock time (321984): 48.831156 ms
 
 suite.add("eagerListMapLazy", () => 
-  let res = buildEager(1000)
-  map(x => x + 1)(res)
-  lm.materialize())
+  map(x => x + 1)(res).materialize())
 //│ = [object Object]
 
 
 suite.add("eagerListMapEager", () => 
-  let res = buildEager(1000)
   mapEager(x => x + 1)(res))
 //│ = [object Object]
 
-:silent
-let res = FingerTreeList.mk(...res)
+fun map2(f) = case
+  [a, ..rest, b] then 
+    [f(a), ..map2(f)(rest), f(b)]
+  [] then []
 
+fun map2Eager(f) = case
+  [a, ...rest, b] then 
+    [f(a), ...map2Eager(f)(rest), f(b)]
+  [] then []
+
+suite.add("eagerListMap2Lazy", () => 
+  map2(x => x + 1)(res).materialize())
+//│ = [object Object]
+
+suite.add("eagerListMap2Eager", () => 
+  map2Eager(x => x + 1)(res))
+//│ = [object Object]
 
 :ge
 mapEager(..[[1]])
 //│ ╔══[COMPILATION ERROR] Lazy spreads are not supported in call arguments
-//│ ║  l.385: 	mapEager(..[[1]])
+//│ ║  l.397: 	mapEager(..[[1]])
 //│ ╙──       	        ^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Function 'mapEager' expected 1 argument but got 2
 
 :e
 fun what(..args) = args
 //│ ╔══[ERROR] Lazy spread parameters not allowed.
-//│ ║  l.392: 	fun what(..args) = args
+//│ ║  l.404: 	fun what(..args) = args
 //│ ╙──       	           ^^^^
 
 fun silly = case
