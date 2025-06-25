@@ -110,8 +110,103 @@ equal([0, ..xs], [0, ...xs])
 //│ = true
 
 :expect [1, [2, 3]]
+:elt
+:sjs
 if xs is
   [a, ..ls] then [a, ls]
+//│ Elaborated tree:
+//│ Blk:
+//│   stats = Nil
+//│   res = IfLike:
+//│     kw = keyword 'if'
+//│     desugared = Cons:
+//│       head = Branch:
+//│         scrutinee = Ref:
+//│           sym = xs
+//│           iargsLs = N
+//│         pattern = Tuple:
+//│           size = 1
+//│           inf = true
+//│         continuation = Let:
+//│           sym = $first0
+//│           term = App:
+//│             lhs = SynthSel:
+//│               prefix = SynthSel:
+//│                 prefix = Ref of $runtime
+//│                 nme = Ident of "Tuple"
+//│               nme = Ident of "get"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Ref:
+//│                   sym = xs
+//│                   iargsLs = N
+//│                 asc = N
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 0
+//│                 asc = N
+//│           tail = Let: \
+//│           sym = $rest
+//│           term = App:
+//│             lhs = SynthSel:
+//│               prefix = SynthSel:
+//│                 prefix = Ref of $runtime
+//│                 nme = Ident of "Tuple"
+//│               nme = Ident of "lazySlice"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Ref:
+//│                   sym = xs
+//│                   iargsLs = N
+//│                 asc = N
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 0
+//│                 asc = N
+//│           tail = Let: \
+//│           sym = a
+//│           term = Ref:
+//│             sym = $first0
+//│             iargsLs = N
+//│           tail = Let: \
+//│           sym = ls
+//│           term = Ref:
+//│             sym = $rest
+//│             iargsLs = N
+//│           tail = Else of Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Ref:
+//│                 sym = a
+//│                 iargsLs = N
+//│               asc = N
+//│             Fld:
+//│               flags = ()
+//│               term = Ref:
+//│                 sym = ls
+//│                 iargsLs = N
+//│               asc = N
+//│       tail = End
+//│ JS (unsanitized):
+//│ let rest, first0, a, ls;
+//│ if (runtime.Tuple.isArrayLike(xs1) && xs1.length >= 1) {
+//│   first0 = runtime.Tuple.get(xs1, 0);
+//│   rest = runtime.safeCall(runtime.Tuple.lazySlice(xs1, 1, 0));
+//│   a = first0;
+//│   ls = rest;
+//│   [
+//│     a,
+//│     ls
+//│   ]
+//│ } else {
+//│   throw new this.Error("match error");
+//│ }
 //│ = [1, [2, 3]]
 
 fun addUntilN(xs, n) =
@@ -185,4 +280,5 @@ equal(zs2, zs)
   [a, ...ls, b] then ls) |> FingerTreeList.isFingerTree
 //│ = true
 
-
+zs.[0]
+//│ = 1
