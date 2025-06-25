@@ -11,6 +11,8 @@ val useLFT = false
 class LazyItr extends IterableBase with
   fun toString() = "[" + this joined(", ") + "]"
 
+// * A View is what we get when we match patterns of the form [x, ..xs]
+// FIXME: `underlying` should be understood as an efficiently random-accessible thing
 class View(val underlying: IterableBase, val start, val end) extends LazyItr with
   fun iterator() = 
     let uitr = underlying.(Symbol.iterator)()
@@ -33,6 +35,7 @@ class View(val underlying: IterableBase, val start, val end) extends LazyItr wit
   fun length = underlying.length - start - end
   fun toString() = "[" + this joined(", ") + "]"
 
+// * [A, B, ..C, D, ..E, F] is represented as Splice([A, B, SpliceMarker, C, D, SpliceMarker, E, F])
 object SpliceMarker
 class Splice(val bits) extends LazyItr with
   fun iterator() =
@@ -61,15 +64,19 @@ class Splice(val bits) extends LazyItr with
       else Result.Done
     Iterator of nextf
 
-  fun lengthHelper = case
-    [SpliceMarker, e, ...rest] then e.length + lengthHelper(rest)
-    [a, ...rest] then 1 + lengthHelper(rest)
-    [] then 0
+  let lengthHelper =Add commentMore actions
+    val go = case
+      [SpliceMarker, e, ...rest] then e.length + go(rest)
+      [a, ...rest] then 1 + go(rest)
+      [] then 0
+    go
 
-  fun flattenHelper = case
-    [SpliceMarker, e, ..rest] then LazyArrayOld.flatten(e) ++ flattenHelper(rest)
-    [a, ...rest] then FingerTreeList.mk(a) ++ flattenHelper(rest)
-    [] then []
+  let flattenHelper =
+    val go = case
+      [SpliceMarker, e, ..rest] then LazyIterator.flatten(e) ++ go(rest)
+      [a, ...rest] then ListFingerTree.mk(a) ++ go(rest)
+      [] then []
+    goAdd comment
 
   fun flatten() = 
     flattenHelper(bits)
@@ -82,13 +89,13 @@ fun normIdx(idx, len) =
   else idx
 
 class LazyItrBoxed(val underlying: IterableBase) extends IterableBase with
-  val fuse = 5
+  mut val fuse = 5
 
   fun iterator() = underlying.(Symbol.iterator)()
 
   fun updateFlatten() = 
-    if this.fuse > 0 then
-      set this.fuse -=  1
+    if fuse > 0 then
+      set fuse -=  1
     else
       set underlying = LazyArrayOld.flatten(underlying)
 
@@ -111,7 +118,7 @@ class LazyItrBoxed(val underlying: IterableBase) extends IterableBase with
         next.value
       else underlying.at(idx)
 
-  fun concat(...args) = LazyArrayOld.concat(split, underlying, ...(args.flatMap (x => [split, x])))
+  fun concat(...args) = LazyArrayOld.concat(split, underlying, ...(args.flatMap(x => [split, x])))
   fun slice(beg, end) = LazyArrayOld.slice(beg, underlying.length - end)(underlying)
   fun toString() = "[" + this joined(", ") + "]"
 
