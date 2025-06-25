@@ -144,11 +144,13 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
         if isValidFieldName(name)
         then doc".$name"
         else name.toIntOption match
-          case S(index) => s".at($index)"
+          case S(index) => s"[$index]"
           case N => s"[${makeStringLiteral(name)}]"
       }"
     case DynSelect(qual, fld, ai) =>
-      doc"${result(qual)}[${result(fld)}]"
+      if ai
+      then doc"${result(qual)}.at(${result(fld)})"
+      else doc"${result(qual)}[${result(fld)}]"
     case Instantiate(cls, as) =>
       doc"new ${result(cls)}(${as.map(result).mkDocument(", ")})"
     case Value.Arr(es) if es.isEmpty => doc"[]"

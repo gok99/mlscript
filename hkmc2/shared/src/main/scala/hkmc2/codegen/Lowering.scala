@@ -315,9 +315,9 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       def conclude(fr: Path) =
         arg match
         case Tup(fs) =>
-          if fs.exists(e => e match 
-            case Spd(false, _) => true
-            case _ => false) 
+          if fs.exists(e => e match
+            case Spd(false, _) => true // is lazy spread
+            case _ => false)
           then
             raise(ErrorReport(
               msg"Lazy spreads are not supported in call arguments" -> arg.toLoc :: Nil, S(arg),
