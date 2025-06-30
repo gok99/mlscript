@@ -1,4 +1,5 @@
 :js
+:todo
 
 :sjs
 fun nonsense(xs) = if xs is
@@ -32,7 +33,7 @@ fun lead_and_last(xs) = if xs is
 //│ lead_and_last = function lead_and_last(xs) {
 //│   let last0, rest, first0, x, ys, y;
 //│   if (runtime.Tuple.isArrayLike(xs) && xs.length >= 2) {
-//│     first0 = xs[0];
+//│     first0 = runtime.Tuple.get(xs, 0);
 //│     rest = runtime.safeCall(runtime.Tuple.lazySlice(xs, 1, 1));
 //│     last0 = runtime.Tuple.get(xs, -1);
 //│     x = first0;
@@ -68,13 +69,13 @@ fun nested_tuple_patterns(xs) = if xs is
 //│ nested_tuple_patterns = function nested_tuple_patterns(xs) {
 //│   let last0, rest, first0, x, first1, first01, y, z, w, tmp, tmp1;
 //│   if (runtime.Tuple.isArrayLike(xs) && xs.length >= 2) {
-//│     first0 = xs[0];
+//│     first0 = runtime.Tuple.get(xs, 0);
 //│     rest = runtime.safeCall(runtime.Tuple.lazySlice(xs, 1, 1));
 //│     last0 = runtime.Tuple.get(xs, -1);
 //│     x = first0;
 //│     if (runtime.Tuple.isArrayLike(rest) && rest.length === 2) {
-//│       first01 = rest[0];
-//│       first1 = rest[1];
+//│       first01 = runtime.Tuple.get(rest, 0);
+//│       first1 = runtime.Tuple.get(rest, 1);
 //│       y = first01;
 //│       z = first1;
 //│       w = last0;
