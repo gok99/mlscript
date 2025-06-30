@@ -70,6 +70,15 @@
         }
         .checkbox-item input {
             margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .checkbox-item label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            flex: 1;
+            min-width: 0;
         }
         .control-buttons {
             margin: 10px 0;
