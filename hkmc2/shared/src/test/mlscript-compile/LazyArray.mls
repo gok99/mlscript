@@ -67,7 +67,31 @@ class Splice(val bits, val len) extends LazyArr with
       else Result.Done
     Iterator of nextf
 
-  fun reify = [...this]
+  fun reify = //  [...this]
+    let counter = 0
+    let arr = new Array(len)
+    let add = x => 
+      set arr.[counter] = x
+      set counter += 1
+    let stack = []
+    stack.push([0, bits])
+    while stack.length > 0 do
+      let e = stack.pop()
+      let idx = e.[0]
+      let vals = e.[1]
+
+      if vals is Splice do
+        set vals = vals.bits
+
+      while (idx < vals.length and
+          (vals.at(idx) is SpliceMarker) is false) do
+        add(vals.at(idx))
+        set idx += 1
+      
+      if (idx < vals.length and vals.at(idx) is SpliceMarker) do
+        stack.push([idx + 2, vals])
+        stack.push([0, vals.at(idx + 1)])
+    arr
 
   fun materialize() =
     if materialized == null then
