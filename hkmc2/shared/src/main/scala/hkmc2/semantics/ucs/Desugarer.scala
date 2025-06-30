@@ -517,7 +517,9 @@ class Desugarer(elaborator: Elaborator)(using Ctx, Raise, State, UnderCtx) exten
         val (wrap, matches) = lead.zipWithIndex.foldRight((wrapRest, restMatches)):
           case ((pat, i), (wrapInner, matches)) =>
             val sym = scrutSymbol.getTupleLeadSubScrutinee(i)
-            val wrap = (split: Split) => Split.Let(sym, Term.SynthSel(ref, Ident(s"$i"))(N), wrapInner(split))
+            val wrap = (split: Split) =>
+              // Split.Let(sym, Term.SynthSel(ref, Ident(s"$i"))(N), wrapInner(split))
+              Split.Let(sym, callTupleGet(ref, i, sym), wrapInner(split))
             (wrap, (sym, pat) :: matches)
         Branch(
           ref,
