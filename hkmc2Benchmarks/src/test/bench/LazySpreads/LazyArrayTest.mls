@@ -462,21 +462,10 @@ let xs = buildEager(150)
 let ys = silly(xs)
 //+ runtime clock time (3219): 4.003477 ms
 
-// suite.add("sillyLazyNoMaterialize1500", () =>
-//   let xs = buildEager(1500)
-//   let ys = silly(xs))
-suite.add("sillyLazyNoMaterialize150", () =>
-  let xs = buildEager(150)
-  let ys = silly(xs))
-suite.add("sillyLazyNoMaterialize15", () =>
-  let xs = buildEager(15)
-  let ys = silly(xs))
-//│ = [object Object]
-
-// suite.add("sillyLazy1500", () => 
-//   let xs = buildEager(1500)
-//   let ys = silly(xs)
-//   ys.materialize())
+suite.add("sillyLazy1500", () => 
+  let xs = buildEager(1500)
+  let ys = silly(xs)
+  ys.materialize())
 suite.add("sillyLazy150", () => 
   let xs = buildEager(150)
   let ys = silly(xs)
@@ -492,7 +481,7 @@ suite.add("sillyLazy15", () =>
 sillyEager(xs)
 //+ runtime clock time (3219): 90.120174 ms
 
-suite.add("sillyEager", () => 
+suite.add("sillyEager150", () => 
   let xs = buildEager(150)
   sillyEager(xs))
 suite.add("sillyEager15", () =>
