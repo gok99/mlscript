@@ -29,7 +29,7 @@ fun parse(tokens) =
   
   fun consume = set peek = advance
   
-  fun require(result: Expr, expected) = if peek is
+  fun req(result: Expr, expected) = if peek is
     Some(actual) and
       expected Token.same(actual) then
         consume
@@ -51,7 +51,7 @@ fun parse(tokens) =
         BasicExpr.Lit(parseInt(literal, 10))
       Token.Identifier("(", true) then
         consume
-        expr require of Token.Identifier(")", true)
+        expr req of Token.Identifier(")", true)
       Token.Identifier(name, false) then
         consume
         BasicExpr.Var(name)

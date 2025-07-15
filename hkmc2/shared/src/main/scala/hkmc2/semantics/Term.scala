@@ -249,6 +249,8 @@ sealed trait Statement extends AutoLocated with ProductWithExtraInfo:
       td.rhs.toList ::: td.annotations.flatMap(_.subTerms)
     case pat: PatternDef =>
       pat.paramsOpt.toList.flatMap(_.subTerms) ::: pat.body.blk :: pat.annotations.flatMap(_.subTerms)
+    case trt: TraitDef =>
+      trt.paramsOpt.toList.flatMap(_.subTerms) ::: trt.body.blk :: trt.annotations.flatMap(_.subTerms)
     case Import(sym, pth) => Nil
     case Try(body, finallyDo) => body :: finallyDo :: Nil
     case Handle(lhs, rhs, args, derivedClsSym, defs, bod) => rhs :: args ::: defs.flatMap(_.td.subTerms) ::: bod :: Nil
@@ -473,6 +475,7 @@ sealed abstract class ClassLikeDef extends TypeLikeDef:
   val paramsOpt: Opt[ParamList]
   val auxParams: Ls[ParamList]
   val ext: Opt[New]
+  val imp: Ls[New]
   val body: ObjBody
   val annotations: Ls[Annot]
   def extraAnnotations: Ls[Annot] = annotations.filter:
@@ -491,7 +494,25 @@ case class ModuleDef(
   kind: ClsLikeKind,
   body: ObjBody,
   annotations: Ls[Annot],
-) extends ClassLikeDef with CompanionValue
+) extends ClassLikeDef with CompanionValue:
+  self =>
+  val imp: Ls[New] = Nil
+
+case class TraitDef(
+  owner: Opt[InnerSymbol],
+  sym: TraitSymbol,
+  bsym: BlockMemberSymbol,
+  tparams: Ls[TyParam],
+  params: Ls[ParamList],
+  imp: Ls[New],
+  body: ObjBody,
+  annotations: Ls[Annot],
+) extends ClassLikeDef:
+  self => 
+  val kind: ClsLikeKind = Trt
+  val ext: Opt[New] = N
+  val paramsOpt: Opt[ParamList] = params.headOption
+  val auxParams: Ls[ParamList] = params.tailOr(Nil)
 
 case class PatternDef(
     owner: Opt[InnerSymbol],
@@ -506,6 +527,7 @@ case class PatternDef(
   self =>
   val kind: ClsLikeKind = Pat
   val ext: Opt[New] = N
+  val imp: Ls[New] = Nil
 
 
 sealed abstract class ClassDef extends ClassLikeDef:
@@ -532,16 +554,17 @@ object ClassDef:
       tparams: Ls[TyParam],
       params: Ls[ParamList],
       ext: Opt[New],
+      imp: Ls[New],
       body: ObjBody,
       annotations: Ls[Annot],
   ): ClassDef =
     params match
       case ps :: pss => Parameterized(owner, kind, sym.asInstanceOf// TODO: improve
         , bsym
-        , tparams, ps, pss, ext, body, N, annotations)
+        , tparams, ps, pss, ext, imp, body, N, annotations)
       case Nil => Plain(owner, kind, sym.asInstanceOf// TODO: improve
         , bsym
-        , tparams, ext, body, N, annotations)
+        , tparams, ext, imp, body, N, annotations)
   
   def unapply(cls: ClassDef): Opt[(ClassSymbol, Ls[TyParam], Opt[ParamList], ObjBody)] =
     S((cls.sym, cls.tparams, cls.paramsOpt, cls.body))
@@ -555,6 +578,7 @@ object ClassDef:
       params: ParamList,
       auxParams: Ls[ParamList],
       ext: Opt[New],
+      imp: Ls[New],
       body: ObjBody,
       companion: Opt[ModuleDef],
       annotations: Ls[Annot],
@@ -567,6 +591,7 @@ object ClassDef:
       sym: ClassSymbol, bsym: BlockMemberSymbol,
       tparams: Ls[TyParam],
       ext: Opt[New],
+      imp: Ls[New],
       body: ObjBody, companion: Opt[CompanionValue],
       annotations: Ls[Annot]
   ) extends ClassDef:

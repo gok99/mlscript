@@ -260,7 +260,7 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
       None, clsSym, BlockMemberSymbol(nme, Nil),
       syntax.Cls,
       S(PlainParamList(sortedVars.iterator.map(_._2).toList)),
-      Nil, None, Nil, Nil, 
+      Nil, None, Nil, Nil, Nil, 
       sortedVars.iterator.map(_._3.sym).toList,
       End(),
       sortedVars.iterator.foldLeft[Block](End()):
@@ -345,6 +345,7 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
     var modules: List[ClsLikeDefn] = Nil
     var objects: List[ClsLikeDefn] = Nil
     var extendsGraph: Set[(BlockMemberSymbol, BlockMemberSymbol)] = Set.empty
+    var implementsGraph: Set[(BlockMemberSymbol, BlockMemberSymbol)] = Set.empty // TODO: use this
 
     d match
       case c @ ClsLikeDefn(k = syntax.Mod) => modules +:= c
@@ -419,7 +420,7 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
           owner.foreach(_.traverse)
           sym.traverse
           applyPath(rhs)
-        case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentPath, methods,
+        case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentPath, implPaths, methods,
             privateFields, publicFields, preCtor, ctor) =>
           own.foreach(_.traverse)
           isym.traverse
@@ -442,6 +443,7 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
               ignored += defn.sym
               unliftable += defn.sym
             case _ => ()
+          // TODO: handle impls
           paramsOpt.foreach(applyParamList)
           auxParams.foreach(applyParamList)
           methods.foreach(applyFunDefn)

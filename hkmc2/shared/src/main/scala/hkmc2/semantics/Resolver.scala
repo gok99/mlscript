@@ -419,6 +419,7 @@ class Resolver(tl: TraceLogger)
       cld.paramsOpt.foreach(_.allParams.foreach(resolveParam(_)))
       cld.annotations.flatMap(_.subTerms).foreach(traverse(_, expect = NonModule(N)))
       cld.ext.foreach(traverse(_, expect = NonModule(N)))
+      cld.imp.foreach(traverse(_, expect = NonModule(N)))
 
       traverseBlock(cld.body.blk)(using withCtxParams)
     

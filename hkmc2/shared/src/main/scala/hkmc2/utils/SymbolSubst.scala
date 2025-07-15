@@ -13,6 +13,7 @@ class SymbolSubst:
   def mapCtorSym(s: CtorSymbol): CtorSymbol = s
   def mapClsSym(s: ClassSymbol): ClassSymbol = s
   def mapModuleSym(s: ModuleSymbol): ModuleSymbol = s
+  def mapTraitSym(s: TraitSymbol): TraitSymbol = s
   def mapTypeAliasSym(s: TypeAliasSymbol): TypeAliasSymbol = s
   def mapPatSym(s: PatternSymbol): PatternSymbol = s
   def mapTopLevelSym(s: TopLevelSymbol): TopLevelSymbol = s

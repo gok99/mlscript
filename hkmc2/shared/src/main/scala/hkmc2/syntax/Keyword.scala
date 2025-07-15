@@ -49,10 +49,14 @@ object Keyword:
     S(_curPrec)
   
   val `class` = Keyword("class", N, N)
-  
+
   val `extends` = Keyword("extends", nextPrec, curPrec)
+  val `implements` = Keyword("implements", curPrec, curPrec)
   val `restricts` = Keyword("restricts", curPrec, curPrec)
   val `with` = Keyword("with", curPrec, curPrec)
+
+  // val `extend` = Keyword("extend", N, N)
+  val `implement` = Keyword("implement", N, N)
   
   val `val` = Keyword("val", N, curPrec)
   val `mut` = Keyword("mut", N, curPrec)
@@ -122,6 +126,7 @@ object Keyword:
   val `this` = Keyword("this", N, N)
   val `outer` = Keyword("outer", N, N)
   val `pattern` = Keyword("pattern", N, N)
+  val `require` = Keyword("require", N, N)
   
   val `->` = Keyword("->", nextPrec, eqPrec)
   
@@ -148,11 +153,11 @@ object Keyword:
     `abstract`, mut, virtual, `override`, declare, public, `private`)
   
   type Infix =
-    `is`.type | `:`.type | `->`.type | `=>`.type | `extends`.type | `restricts`.type | `as`.type | `do`.type | `where`.type | `with`.type |
+    `is`.type | `:`.type | `->`.type | `=>`.type | `extends`.type | `implements`.type | `restricts`.type | `as`.type | `do`.type | `where`.type | `with`.type |
     `and`.type | `or`.type | `then`.type | `else`.type
   
   type InfixSplittable =
-    `is`.type | `:`.type | `->`.type | `=>`.type | `extends`.type | `restricts`.type | `as`.type | `do`.type | `where`.type | `with`.type |
+    `is`.type | `:`.type | `->`.type | `=>`.type | `extends`.type | `implements`.type  | `restricts`.type | `as`.type | `do`.type | `where`.type | `with`.type |
     `of`.type
   
   type Ellipsis = `...`.type | `..`.type

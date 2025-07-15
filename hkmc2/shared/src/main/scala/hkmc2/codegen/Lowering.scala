@@ -171,12 +171,22 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       case cls: ClassLikeDef if cls.sym.defn.exists(_.isDeclare.isDefined) =>
         // * Declarations have no lowering
         blockImpl(stats, res)(k)
+      case cls: ClassLikeDef if cls.kind is syntax.Trt => ???
       case cls: ClassLikeDef =>
         reportAnnotations(cls, cls.extraAnnotations)
         val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(cls.body)
+        def getImpPaths(imp: List[New])(k: List[Path] => Block): Block = 
+          imp match
+          case Nil => k(Nil)
+          case im :: imp =>
+            subTerm(im.cls): p =>
+              getImpPaths(imp)(paths => k(p :: paths))
+        
+        getImpPaths(cls.imp)(impPaths => 
         cls.ext match
         case N =>
           Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
+                impPaths,
                 mtds,
                 privateFlds,
                 publicFlds,
@@ -190,11 +200,12 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
             val pctor = parentConstructor(ext.cls, ext.argss)
             Define(
               ClsLikeDefn(
-                cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp),
+                cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp), impPaths,
                 mtds, privateFlds, publicFlds, pctor, ctor
               ),
               blockImpl(stats, res)(k)
             )
+        )
       case td: TypeDef => // * Type definitions are erased
         blockImpl(stats, res)(k)
   
@@ -211,7 +222,8 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
     
     // Funny Scala: the non-exhaustive match is actually the second match
     t match
-      case t: sem.Resolvable => t.instantiate
+      case t: sem.Resolvable => 
+        t.instantiate
       case t => t
     match
     case st.UnitVal() => k(unit)
@@ -582,7 +594,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         val sym = new BlockMemberSymbol(isym.name, Nil)
         val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(rft)
         val pctor = parentConstructor(cls, ass)
-        val clsDef = ClsLikeDefn(N, isym, sym, syntax.Cls, N, Nil, S(clsp),
+        val clsDef = ClsLikeDefn(N, isym, sym, syntax.Cls, N, Nil, S(clsp), Nil,
           mtds, privateFlds, publicFlds, pctor, ctor)
         Define(clsDef, term_nonTail(New(sym.ref().noIArgs, Nil, N))(k))
       

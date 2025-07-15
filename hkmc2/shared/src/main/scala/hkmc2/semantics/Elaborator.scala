@@ -218,7 +218,7 @@ object Elaborator:
       val flag = FldFlags.empty.copy(value = true)
       val ps = PlainParamList(Param(flag, VarSymbol(Ident("captures")), N, Modulefulness(N)(false)) :: Nil)
       cs.defn = S(ClassDef.Parameterized(N, syntax.Cls, cs, BlockMemberSymbol(cs.name, td :: Nil),
-        Nil, ps, Nil, N, ObjBody(Blk(Nil, Term.Lit(UnitLit(false)))), N, Nil))
+        Nil, ps, Nil, N, Nil, ObjBody(Blk(Nil, Term.Lit(UnitLit(false)))), N, Nil))
       cs
     val matchFailureClsSymbol =
       val id = new Ident("MatchFailure")
@@ -227,7 +227,7 @@ object Elaborator:
       val flag = FldFlags.empty.copy(value = true)
       val ps = PlainParamList(Param(flag, VarSymbol(Ident("errors")), N, Modulefulness(N)(false)) :: Nil)
       cs.defn = S(ClassDef.Parameterized(N, syntax.Cls, cs, BlockMemberSymbol(cs.name, td :: Nil),
-        Nil, ps, Nil, N, ObjBody(Blk(Nil, Term.Lit(UnitLit(false)))), N, Nil))
+        Nil, ps, Nil, N, Nil, ObjBody(Blk(Nil, Term.Lit(UnitLit(false)))), N, Nil))
       cs
     val builtinOpsMap =
       val baseBuiltins = builtins.map: op =>
@@ -278,7 +278,8 @@ extends Importer:
         N
     case _ => N
   
-  def cls(trm: Term, inAppPrefix: Bool)
+  // TODO: fix
+  def cls(trm: Term, inAppPrefix: Bool, id: String = "class")
       : Ctxl[Term]
       = trace[Term](s"Elab class ${trm}", r => s"~> $r"):
     trm.symbol match
@@ -287,8 +288,11 @@ extends Importer:
     case S(mem: BlockMemberSymbol) =>
       // FIXME: `defn` is not available before elaboration. See pull/277#discussion_r2051448677
       if !mem.hasLiftedClass || mem.defn.exists(_.isDeclare.isDefined) then trm
-      else Term.SynthSel(trm, Ident("class"))(mem.clsTree.orElse(mem.modOrObjTree).map(_.symbol))
+      else Term.SynthSel(trm, Ident(id))(mem.clsTree.orElse(mem.modOrObjTree).map(_.symbol))
     case _ => trm
+
+  // def sbl(trm: Term, id: String = "symbol") = 
+  //   Term.SynthSel(trm, Ident(id))(N)
   
   def annot(tree: Tree): Ctxl[Opt[Annot]] = tree match
     case Keywrd(kw @ (Keyword.`abstract` | Keyword.`declare` | Keyword.`data`)) => S(Annot.Modifier(kw))
@@ -366,7 +370,7 @@ extends Importer:
       derivedClsSym.defn = S(ClassDef(
         N, syntax.Cls, derivedClsSym,
         BlockMemberSymbol(derivedClsSym.name, Nil),
-        Nil, Nil, N, ObjBody(Blk(Nil, Term.Lit(Tree.UnitLit(false)))), List()))
+        Nil, Nil, N, Nil, ObjBody(Blk(Nil, Term.Lit(Tree.UnitLit(false)))), List()))
       
       val elabed = ctx.nestInner(derivedClsSym).givenIn:
         block(sts_, hasResult = false)._1
@@ -1015,7 +1019,7 @@ extends Importer:
             go(sts, Nil, acc)
       case (td @ TypeDef(k, head, rhs)) :: sts =>
         
-        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Pat), k)
+        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Trt) || (k is Pat), k)
         val body = td.withPart
         
         td.symbName match
@@ -1185,9 +1189,20 @@ extends Importer:
             log(s"Processing type definition $nme")
             val cd =
               val (bod, c) = mkBody
-              ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), ObjBody(bod), annotations)
+              ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), implsOf(td), ObjBody(bod), annotations)
             clsSym.defn = S(cd)
             cd
+        case Trt =>
+          val trtSym = td.symbol.asInstanceOf[TraitSymbol] // TODO: improve `asInstanceOf`
+          val owner = ctx.outer.inner
+          newCtx.nestInner(trtSym).givenIn:
+            log(s"Processing type definition $nme")
+            val cd =
+              val (bod, _) = mkBody
+              TraitDef(owner, trtSym, sym, tps, pss, implsOf(td), ObjBody(bod), annotations)
+            trtSym.defn = S(cd)
+            cd
+          
         sym.defn = S(defn)
         go(sts, Nil, defn :: acc)
       case Annotated(annotation, target) :: sts =>
@@ -1230,6 +1245,15 @@ extends Importer:
           msg"Unexpected shape of extension clause: ${trm.describe}" -> trm.toLoc :: Nil
       N
     case N => N
+  
+  // TODO: fix lol
+  def implsOf(td: TypeDef)(using Ctx): Ls[Term.New] =
+    given UnderCtx = new UnderCtx(N)
+    td.implementation.map(ext =>
+      // funny scala seems to need this annotated binding
+      val t: Term.New = Term.New(cls(subterm(ext), false, "symbol"), Nil, N)
+      t.withLocOf(td.head)
+    )
   
   def fieldOrVarSym(k: TermDefKind, id: Ident)(using Ctx): TermSymbol | VarSymbol =
     if ctx.outer.inner.isDefined then TermSymbol(k, ctx.outer.inner, id)

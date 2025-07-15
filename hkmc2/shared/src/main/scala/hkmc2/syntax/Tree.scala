@@ -84,6 +84,7 @@ enum Tree extends AutoLocated:
   case Region(name: Tree, body: Tree)
   case RegRef(reg: Tree, value: Tree)
   case Effectful(eff: Tree, body: Tree)
+  case Require(const: Tree)
   case Outer(name: Opt[Tree])
   case Spread(kw: Keyword.Ellipsis, kwLoc: Opt[Loc], body: Opt[Tree])
   case Annotated(annotation: Tree, target: Tree)
@@ -323,9 +324,11 @@ sealed trait ObjDefKind
 sealed trait ClsLikeKind extends ObjDefKind:
   val desc: Str
 case object Cls extends TypeDefKind("class") with ClsLikeKind
-case object Trt extends TypeDefKind("trait") with ObjDefKind
+case object Trt extends TypeDefKind("trait") with ClsLikeKind
 case object Mxn extends TypeDefKind("mixin")
 case object Als extends TypeDefKind("type alias")
+case object Req extends TypeDefKind("require") // TODO: parse properly
+case object Impl extends TypeDefKind("implement")
 case object Mod extends TypeDefKind("module") with ClsLikeKind
 case object Obj extends TypeDefKind("object") with ClsLikeKind
 case object Pat extends TypeDefKind("pattern") with ClsLikeKind
@@ -409,17 +412,47 @@ trait TypeOrTermDef:
           Nil, N, annot)
       
     rec(baseHead, N, N)
-  
-  val (baseHead, extension, withPart) =
+
+//│   head = InfixApp:
+//│     lhs = InfixApp:
+//│       lhs = InfixApp:
+//│         lhs = Ident of "Test"
+//│         kw = keyword 'extends'
+//│         rhs = Ident of "Dick1"
+//│       kw = keyword 'implements'
+//│       rhs = Ident of "Dick1"
+//│     kw = keyword 'with'
+//│     rhs = Block of Ls of 
+//│       TermDef:
+
+  def impList(imp: Tree): Ls[Tree] = imp match
+    case Tup(imps) => imps
+    case Ident(_) => Ls(imp)
+    case _ => ???
+ 
+  // TODO with cases
+  val (baseHead, extension, implementation, withPart) =
     head match
+    case InfixApp(InfixApp(InfixApp(base, Keyword.`extends`, ext), Keyword.`implements`, imp), Keyword.`with`, wp) =>
+      (base, S(ext), impList(imp), S(wp))
+    case InfixApp(InfixApp(InfixApp(base, Keyword.`implements`, imp), Keyword.`extends`, ext), Keyword.`with`, wp) =>
+      (base, S(ext), impList(imp), S(wp))
+    case InfixApp(InfixApp(base, Keyword.`extends`, ext), Keyword.`implements`, imp) =>
+      (base, S(ext), impList(imp), N)
+    case InfixApp(InfixApp(base, Keyword.`implements`, imp), Keyword.`extends`, ext) =>
+      (base, S(ext), impList(imp), N)
+    case InfixApp(InfixApp(base, Keyword.`implements`, imp), Keyword.`with`, wp) =>
+      (base, N, impList(imp), S(wp))
     case InfixApp(InfixApp(base, Keyword.`extends`, ext), Keyword.`with`, wp) =>
-      (base, S(ext), S(wp))
+      (base, S(ext), Nil, S(wp))
     case InfixApp(base, Keyword.`with`, wp) =>
-      (base, N, S(wp))
+      (base, N, Nil, S(wp))
     case InfixApp(base, Keyword.`extends`, ext) =>
-      (base, S(ext), N)
+      (base, S(ext), Nil, N)
+    case InfixApp(base, Keyword.`implements`, imp) =>
+      (base, N, impList(imp), N)
     case h => 
-      (h, N, N)
+      (h, N, Nil, N)
   
 end TypeOrTermDef
 
@@ -430,12 +463,13 @@ trait TypeDefImpl(using State) extends TypeOrTermDef:
   lazy val symbol = k match
     case Cls => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
     case Mod | Obj => semantics.ModuleSymbol(this, name.getOrElse(Ident("<error>")))
+    case Trt => semantics.TraitSymbol(this, name.getOrElse(Ident("<error>")))
     case Als => semantics.TypeAliasSymbol(name.getOrElse(Ident("<error>")))
     case Pat => semantics.PatternSymbol(
       name.getOrElse(Ident("<error>")),
       paramLists.headOption,
       rhs.getOrElse(die))
-    case Trt | Mxn => ???
+    case Mxn => ???
   
   lazy val definedSymbols: Map[Str, semantics.BlockMemberSymbol] =
     // val fromParams = 

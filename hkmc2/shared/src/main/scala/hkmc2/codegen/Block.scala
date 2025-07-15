@@ -38,7 +38,7 @@ sealed abstract class Block extends Product with AutoLocated:
     case AssignDynField(lhs, fld, arrayIdx, rhs, rest) => lhs :: fld :: rhs :: rest :: Nil
     case Define(FunDefn(owner, sym, params, body), rest) => sym :: (params :+ body :+ rest)
     case Define(ValDefn(owner, k, sym, rhs), rest) => sym :: rhs :: rest :: Nil
-    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, methods, privFlds, pubFlds, preCtor, ctor), rest) =>
+    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, implSyms, methods, privFlds, pubFlds, preCtor, ctor), rest) =>
       isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++ privFlds ++ pubFlds
       ++ preCtor.subBlocks ++ ctor.subBlocks :+ rest
     case HandleBlock(lhs, res, par, args, cls, handlers, body, rest) =>
@@ -329,7 +329,7 @@ sealed abstract class Defn:
   lazy val freeVars: Set[Local] = this match
     case FunDefn(own, sym, params, body) => body.freeVars -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVars
-    case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
+    case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, implSyms,
         methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVars
         ++ ctor.freeVars ++ methods.flatMap(_.freeVars)
@@ -338,7 +338,7 @@ sealed abstract class Defn:
   lazy val freeVarsLLIR: Set[Local] = this match
     case FunDefn(own, sym, params, body) => body.freeVarsLLIR -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVarsLLIR
-    case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
+    case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, implSyms,
         methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVarsLLIR
         ++ ctor.freeVarsLLIR ++ methods.flatMap(_.freeVarsLLIR)
@@ -368,6 +368,7 @@ final case class ClsLikeDefn(
     paramsOpt: Opt[ParamList],
     auxParams: List[ParamList],
     parentPath: Opt[Path],
+    traits: Ls[Path],
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
     publicFields: Ls[BlockMemberSymbol],
