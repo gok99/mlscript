@@ -249,8 +249,8 @@ sealed trait Statement extends AutoLocated with ProductWithExtraInfo:
       td.rhs.toList ::: td.annotations.flatMap(_.subTerms)
     case pat: PatternDef =>
       pat.paramsOpt.toList.flatMap(_.subTerms) ::: pat.body.blk :: pat.annotations.flatMap(_.subTerms)
-    case trt: TraitDef =>
-      trt.paramsOpt.toList.flatMap(_.subTerms) ::: trt.body.blk :: trt.annotations.flatMap(_.subTerms)
+    case impl: ImplementDef =>
+      impl.paramsOpt.toList.flatMap(_.subTerms) ::: impl.body.blk :: impl.annotations.flatMap(_.subTerms)
     case Import(sym, pth) => Nil
     case Try(body, finallyDo) => body :: finallyDo :: Nil
     case Handle(lhs, rhs, args, derivedClsSym, defs, bod) => rhs :: args ::: defs.flatMap(_.td.subTerms) ::: bod :: Nil
@@ -498,21 +498,20 @@ case class ModuleDef(
   self =>
   val imp: Ls[New] = Nil
 
-case class TraitDef(
+case class ImplementDef(
   owner: Opt[InnerSymbol],
-  sym: TraitSymbol,
+  sym: ImplementSymbol,
   bsym: BlockMemberSymbol,
   tparams: Ls[TyParam],
-  params: Ls[ParamList],
-  imp: Ls[New],
+  paramsOpt: Opt[ParamList],
+  auxParams: Ls[ParamList],
   body: ObjBody,
   annotations: Ls[Annot],
 ) extends ClassLikeDef:
-  self => 
-  val kind: ClsLikeKind = Trt
+  self =>
+  val kind: ClsLikeKind = Impl
   val ext: Opt[New] = N
-  val paramsOpt: Opt[ParamList] = params.headOption
-  val auxParams: Ls[ParamList] = params.tailOr(Nil)
+  val imp: Ls[New] = Nil
 
 case class PatternDef(
     owner: Opt[InnerSymbol],

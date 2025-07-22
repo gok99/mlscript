@@ -318,6 +318,8 @@ case object LetBind extends ValLike("let", "let binding")
 case object HandlerBind extends TermDefKind("handler", "handler binding")
 case object ParamBind extends ValLike("", "parameter")
 case object Fun extends TermDefKind("fun", "function")
+// TODO: tentative
+case object TrtFun extends TermDefKind("trt fun", "trait function")
 case object Ins extends TermDefKind("using", "implicit instance")
 sealed abstract class TypeDefKind(desc: Str) extends DeclKind(desc)
 sealed trait ObjDefKind
@@ -328,7 +330,7 @@ case object Trt extends TypeDefKind("trait") with ClsLikeKind
 case object Mxn extends TypeDefKind("mixin")
 case object Als extends TypeDefKind("type alias")
 case object Req extends TypeDefKind("require") // TODO: parse properly
-case object Impl extends TypeDefKind("implement")
+case object Impl extends TypeDefKind("implement") with ClsLikeKind
 case object Mod extends TypeDefKind("module") with ClsLikeKind
 case object Obj extends TypeDefKind("object") with ClsLikeKind
 case object Pat extends TypeDefKind("pattern") with ClsLikeKind
@@ -463,7 +465,8 @@ trait TypeDefImpl(using State) extends TypeOrTermDef:
   lazy val symbol = k match
     case Cls => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
     case Mod | Obj => semantics.ModuleSymbol(this, name.getOrElse(Ident("<error>")))
-    case Trt => semantics.TraitSymbol(this, name.getOrElse(Ident("<error>")))
+    case Trt => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
+    case Impl => semantics.ImplementSymbol(this, name.getOrElse(Ident("<error>")))
     case Als => semantics.TypeAliasSymbol(name.getOrElse(Ident("<error>")))
     case Pat => semantics.PatternSymbol(
       name.getOrElse(Ident("<error>")),

@@ -15,6 +15,8 @@ import Term.{ Blk, Rcd }
 import hkmc2.Message.MessageContext
 
 import Keyword.{`let`, `set`}
+import hkmc2.semantics.Term.UnitVal
+import hkmc2.semantics.Term.New
 
 
 object Elaborator:
@@ -787,7 +789,7 @@ extends Importer:
       case (name, sym) =>
         val defns = sym.trees.collect:
           case td: TermDef if td.rhs.isDefined => td
-          case td: TypeDef => td
+          case td: TypeDef if td.k != Req && td.k != Impl => td
         if defns.length > 1 then
           raise(ErrorReport(msg"Multiple definitions of symbol '$name'" -> N ::
             defns.map(msg"defined here" -> _.toLoc)))
@@ -1017,9 +1019,12 @@ extends Importer:
             reportUnusedAnnotations
             raise(d)
             go(sts, Nil, acc)
+      case TypeDef(Req, _, _) :: sts =>
+        // 
+        go(sts, Nil, acc)
       case (td @ TypeDef(k, head, rhs)) :: sts =>
         
-        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Trt) || (k is Pat), k)
+        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Pat) || (k is Trt) || (k is Impl), k)
         val body = td.withPart
         
         td.symbName match
@@ -1187,22 +1192,46 @@ extends Importer:
           val owner = ctx.outer.inner
           newCtx.nestInner(clsSym).givenIn:
             log(s"Processing type definition $nme")
+            val headerImpls =  implsOf(td.implementation, td.head)
+            val bodyImpls = body.map(bodyImplsOf).getOrElse(Nil)
             val cd =
               val (bod, c) = mkBody
-              ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), implsOf(td), ObjBody(bod), annotations)
+              ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), headerImpls ++ bodyImpls, ObjBody(bod), annotations)
             clsSym.defn = S(cd)
             cd
         case Trt =>
-          val trtSym = td.symbol.asInstanceOf[TraitSymbol] // TODO: improve `asInstanceOf`
+          val trtSym = td.symbol.asInstanceOf[ClassSymbol] // TODO: improve `asInstanceOf`
           val owner = ctx.outer.inner
           newCtx.nestInner(trtSym).givenIn:
             log(s"Processing type definition $nme")
+            val headerImpls =  implsOf(td.implementation, td.head)
+            val (bod, _) = mkBody
+            val valueSym = VarSymbol(Ident("base"))
+            val mtdSym = BlockMemberSymbol(trtSym.nme, Nil, true)
+            val innerTrt = ClassDef(
+              owner, Trt, trtSym, mtdSym, tps, pss, 
+              S(New(valueSym.ref(Ident("base")), Nil, N)),
+              // N,
+              headerImpls, ObjBody(bod), annotations)
+            val body = Blk(innerTrt :: Nil, mtdSym.ref(Ident(mtdSym.nme)))
+            val cd = TermDefinition(
+              owner, TrtFun, sym, PlainParamList(Param(FldFlags.empty, valueSym, N, Modulefulness.none) :: Nil) :: Nil,
+              N, N, S(body), FlowSymbol(s"‹result of trait ${mtdSym.nme}›"), TermDefFlags.empty, Modulefulness.none, Nil
+            )
+            trtSym.defn = S(innerTrt)
+            cd
+        case Impl =>
+          val implSym = td.symbol.asInstanceOf[ImplementSymbol] // TODO: improve `asInstanceOf`
+          val owner = ctx.outer.inner
+          newCtx.nestInner(implSym).givenIn:
+            log(s"Processing type definition $nme")
+            val headerImpls =  implsOf(td.implementation, td.head)
+            val bodyImpls = body.map(bodyImplsOf).getOrElse(Nil)
             val cd =
               val (bod, _) = mkBody
-              TraitDef(owner, trtSym, sym, tps, pss, implsOf(td), ObjBody(bod), annotations)
-            trtSym.defn = S(cd)
+              ImplementDef(owner, implSym, sym, tps, pss.headOption, pss.tailOr(Nil), ObjBody(bod), annotations)
+            implSym.defn = S(cd)
             cd
-          
         sym.defn = S(defn)
         go(sts, Nil, defn :: acc)
       case Annotated(annotation, target) :: sts =>
@@ -1217,6 +1246,11 @@ extends Importer:
     end go
     
     c.withMembers(members, c.outer.inner).givenIn:
+      // println("==========")
+      // var i = 1
+      // blk.desugStmts.foreach: s =>
+      //   println(s"${i}: ${s.showAsTree}")
+      //   i += 1
       go(blk.desugStmts, Nil, Nil)
   
   
@@ -1247,14 +1281,26 @@ extends Importer:
     case N => N
   
   // TODO: fix lol
-  def implsOf(td: TypeDef)(using Ctx): Ls[Term.New] =
+  def implsOf(trees: List[Tree], loc: Located)(using Ctx): Ls[Term.New] =
     given UnderCtx = new UnderCtx(N)
-    td.implementation.map(ext =>
+    trees.map(ext =>
       // funny scala seems to need this annotated binding
       val t: Term.New = Term.New(cls(subterm(ext), false, "symbol"), Nil, N)
-      t.withLocOf(td.head)
+      t.withLocOf(loc)
     )
-  
+
+  def bodyImplsOf(body: Tree)(using Ctx): Ls[Term.New] =
+    given UnderCtx = new UnderCtx(N)
+    body match
+      case Block(x) => x.foldRight(Nil)((t, acc) =>
+        t match
+          case (TypeDef(Req, head, _)) =>
+            val tp: Term.New = Term.New(cls(subterm(head), false, "symbol"), Nil, N)
+            tp :: acc // TODO: populate loc
+          case _ => acc
+      )
+      case _ => ???
+
   def fieldOrVarSym(k: TermDefKind, id: Ident)(using Ctx): TermSymbol | VarSymbol =
     if ctx.outer.inner.isDefined then TermSymbol(k, ctx.outer.inner, id)
     else VarSymbol(id)

@@ -40,10 +40,6 @@ abstract class Symbol(using State) extends Located:
     case _ => N
   def asMod: Opt[ModuleSymbol] = asModOrObj.filter(_.tree.k is Mod)
   def asObj: Opt[ModuleSymbol] = asModOrObj.filter(_.tree.k is Obj)
-  def asTrt: Opt[TraitSymbol] = this match
-    case trt: TraitSymbol => S(trt)
-    case mem: BlockMemberSymbol => mem.trtTree.flatMap(_.symbol.asTrt)
-    case _ => N
   
   def asClsOrMod: Opt[ClassSymbol | ModuleSymbol] = asCls orElse asModOrObj
   /* 
@@ -231,7 +227,7 @@ case class ErrorSymbol(val nme: Str, tree: Tree)(using State) extends MemberSymb
   override def toString = s"error:$nme"
 
 sealed trait ClassLikeSymbol extends Symbol:
-  self: MemberSymbol[? <: ClassDef | ModuleDef | TraitDef] =>
+  self: MemberSymbol[? <: ClassDef | ModuleDef | ImplementDef] =>
   val tree: Tree.TypeDef
   def subst(using sub: SymbolSubst): ClassLikeSymbol
 
@@ -245,14 +241,14 @@ sealed trait InnerSymbol(using State) extends Symbol:
   val thisProxy: TempSymbol = TempSymbol(N, s"this$$$nme")
   def subst(using SymbolSubst): InnerSymbol
 
-class TraitSymbol(val tree: Tree.TypeDef, val id: Tree.Ident)(using State)
-    extends MemberSymbol[TraitDef] with ClassLikeSymbol with CtorSymbol with InnerSymbol with NamedSymbol:
+class ImplementSymbol(val tree: Tree.TypeDef, val id: Tree.Ident)(using State)
+    extends MemberSymbol[ImplementDef] with ClassLikeSymbol with CtorSymbol with InnerSymbol with NamedSymbol:
   def name: Str = nme
   def nme = id.name
   def toLoc: Option[Loc] = id.toLoc // TODO track source tree of trait here
-  override def toString: Str = s"trait:$nme${State.dbgUid(uid)}"
+  override def toString: Str = s"require:$nme${State.dbgUid(uid)}"
   
-  override def subst(using sub: SymbolSubst): TraitSymbol = sub.mapTraitSym(this)
+  override def subst(using sub: SymbolSubst): ImplementSymbol = sub.mapImplementSym(this)
 
 class ClassSymbol(val tree: Tree.TypeDef, val id: Tree.Ident)(using State)
     extends MemberSymbol[ClassDef] with ClassLikeSymbol with CtorSymbol with InnerSymbol with NamedSymbol:

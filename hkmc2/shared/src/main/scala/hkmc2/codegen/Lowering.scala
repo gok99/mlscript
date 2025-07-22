@@ -158,7 +158,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
               //   term(st.Blk(stats, res))(k)))
               Define(ValDefn(td.owner, knd, td.sym, r),
                 blockImpl(stats, res)(k)))
-          case syntax.Fun =>
+          case syntax.Fun | syntax.TrtFun =>
             val (paramLists, bodyBlock) = setupFunctionOrByNameDef(td.params, bod, S(td.sym.nme))
             Define(FunDefn(td.owner, td.sym, paramLists, bodyBlock),
               blockImpl(stats, res)(k))
@@ -171,7 +171,6 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       case cls: ClassLikeDef if cls.sym.defn.exists(_.isDeclare.isDefined) =>
         // * Declarations have no lowering
         blockImpl(stats, res)(k)
-      case cls: ClassLikeDef if cls.kind is syntax.Trt => ???
       case cls: ClassLikeDef =>
         reportAnnotations(cls, cls.extraAnnotations)
         val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(cls.body)
@@ -286,7 +285,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         bs.defn match
         case S(d) if d.isDeclare.isDefined =>
           return term(Sel(State.globalThisSymbol.ref().noIArgs, ref.tree)(S(bs)).noIArgs)(k)
-        case S(td: TermDefinition) if td.k is syntax.Fun =>
+        case S(td: TermDefinition) if (td.k is syntax.Fun) || (td.k is syntax.TrtFun) =>
           // * Local functions with no parameter lists are getters
           // * and are lowered to functions with an empty parameter list
           // * (non-local functions are compiled into getter methods selected on some prefix)
@@ -332,7 +331,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       val isMlsFun = f.resolvedSymbol.fold(f.isInstanceOf[st.Lam]):
         case _: sem.BuiltinSymbol => true
         case sym: sem.BlockMemberSymbol =>
-          sym.trmImplTree.fold(sym.clsTree.isDefined)(_.k is syntax.Fun)
+          sym.trmImplTree.fold(sym.clsTree.isDefined)(f => (f.k is syntax.Fun) || (f.k is syntax.TrtFun))
         case _ => false
       def conclude(fr: Path) =
         arg match
