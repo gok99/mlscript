@@ -1299,7 +1299,7 @@ extends Importer:
             tp :: acc // TODO: populate loc
           case _ => acc
       )
-      case _ => ???
+      case _ => Nil
 
   def fieldOrVarSym(k: TermDefKind, id: Ident)(using Ctx): TermSymbol | VarSymbol =
     if ctx.outer.inner.isDefined then TermSymbol(k, ctx.outer.inner, id)
