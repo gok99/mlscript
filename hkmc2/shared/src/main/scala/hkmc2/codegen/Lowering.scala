@@ -98,7 +98,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
     case Nil =>
       (imps.reverse, funs.reverse, rest.reverse)
   
-  
+
   def block(stats: Ls[Statement], res: Rcd \/ Term)(k: Result => Block)(using Subst): Block =
     // TODO we should also isolate and reorder classes by inheritance topological sort
     val (imps, funs, rest) = splitBlock(stats, Nil, Nil, Nil)
@@ -173,38 +173,38 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         blockImpl(stats, res)(k)
       case cls: ClassLikeDef =>
         reportAnnotations(cls, cls.extraAnnotations)
-        val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(cls.body)
-        def getImpPaths(imp: List[New])(k: List[Path] => Block): Block = 
+        val (mtds, publicFlds, privateFlds, abstractFlds, ctor) = gatherMembers(cls.body)
+        def implPaths(imp: List[New])(k: List[Path] => Block): Block = 
           imp match
           case Nil => k(Nil)
           case im :: imp =>
             subTerm(im.cls): p =>
-              getImpPaths(imp)(paths => k(p :: paths))
+              implPaths(imp)(paths => k(p :: paths))
         
-        getImpPaths(cls.imp)(impPaths => 
-        cls.ext match
-        case N =>
-          Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
-                impPaths,
-                mtds,
-                privateFlds,
-                publicFlds,
-                End(),
-                ctor
-              ),
-            blockImpl(stats, res)(k))
-        case S(ext) =>
-          assert(k isnt syntax.Mod) // modules can't extend things and can't have super calls
-          subTerm(ext.cls): clsp =>
-            val pctor = parentConstructor(ext.cls, ext.argss)
-            Define(
-              ClsLikeDefn(
-                cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp), impPaths,
-                mtds, privateFlds, publicFlds, pctor, ctor
-              ),
-              blockImpl(stats, res)(k)
+        implPaths(cls.imp): impls =>
+          cls.ext match
+          case N =>
+            Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
+                  impls,
+                  mtds,
+                  privateFlds,
+                  publicFlds,
+                  abstractFlds,
+                  End(),
+                  ctor
+                ),
+              blockImpl(stats, res)(k))
+          case S(ext) =>
+            assert(k isnt syntax.Mod) // modules can't extend things and can't have super calls
+            subTerm(ext.cls): clsp =>
+              val pctor = parentConstructor(ext.cls, ext.argss)
+              Define(
+                ClsLikeDefn(
+                  cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp), impls,
+                  mtds, privateFlds, publicFlds, abstractFlds, pctor, ctor
+                ),
+                blockImpl(stats, res)(k)
             )
-        )
       case td: TypeDef => // * Type definitions are erased
         blockImpl(stats, res)(k)
   
@@ -591,10 +591,10 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
     case New(cls, ass, S((isym, rft))) =>
       subTerm(cls): clsp =>
         val sym = new BlockMemberSymbol(isym.name, Nil)
-        val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(rft)
+        val (mtds, publicFlds, privateFlds, abstractFlds, ctor) = gatherMembers(rft)
         val pctor = parentConstructor(cls, ass)
         val clsDef = ClsLikeDefn(N, isym, sym, syntax.Cls, N, Nil, S(clsp), Nil,
-          mtds, privateFlds, publicFlds, pctor, ctor)
+          mtds, privateFlds, publicFlds, abstractFlds, pctor, ctor)
         Define(clsDef, term_nonTail(New(sym.ref().noIArgs, Nil, N))(k))
       
     case Try(sub, finallyDo) =>
@@ -766,7 +766,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       End("error")
 
   
-  def gatherMembers(clsBody: ObjBody)(using Subst): (Ls[FunDefn], Ls[BlockMemberSymbol], Ls[TermSymbol], Block) =
+  def gatherMembers(clsBody: ObjBody)(using Subst): (Ls[FunDefn], Ls[BlockMemberSymbol], Ls[TermSymbol], Ls[TermDefinition], Block) =
     val mtds = clsBody.methods
       .flatMap: td =>
         td.body.map: bod =>
@@ -777,13 +777,14 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       case decl @ LetDecl(sym: TermSymbol, annotations) =>
         reportAnnotations(decl, annotations)
         sym
+    val abstractFlds = clsBody.abstractFlds
     val ctor =
       term_nonTail(Blk(clsBody.nonMethods, clsBody.blk.res))(ImplctRet)
         // * This is just a minor improvement to get `constructor() {}` instead of `constructor() { null }`
         .mapTail:
           case Return(Value.Lit(syntax.Tree.UnitLit(true)), true) => End()
           case t => t
-    (mtds, publicFlds, privateFlds, ctor)
+    (mtds, publicFlds, privateFlds, abstractFlds, ctor)
   
   def args(elems: Ls[Elem])(k: Ls[Arg] => Block)(using Subst): Block =
     val as = elems.map:

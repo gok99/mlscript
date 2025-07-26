@@ -443,6 +443,9 @@ case class ObjBody(blk: Term.Blk):
     case s => R(s)
   lazy val publicFlds: Ls[TermDefinition] = nonMethods.collect:
     case td @ TermDefinition(k = (_: syntax.Val)) => td
+  lazy val abstractFlds: Ls[TermDefinition] = blk.stats.foldRight(Nil):
+    case (td @ TermDefinition(body = N), acc) => td :: acc
+    case (_, acc) => acc
   
   // override def toString: String = statmts.mkString("{ ", "; ", " }")
   override def toString: String = blk.showDbg

@@ -188,6 +188,9 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
           doc"${mkThis(owner)}${fieldSelect(sym.nme)} = ${result(p)};${returningTerm(rst, endSemi)}"
       case defn: (FunDefn | ClsLikeDefn) =>
         val outerScope = scope
+        //
+        def implsJs(sym: BlockMemberSymbol, impls: Ls[Path], init: Document) = impls.foldLeft(init):
+          case (acc, im) => doc"${acc} # ${getVar(sym)}[${result(im)}.symbol] = Symbol();"
         val (thisProxy, res) = scope.nestRebindThis(
             // * Either this is an InnerSymbol or this is a Fun,
             // * and we need to rebind `this` to None to shadow it.
@@ -199,16 +202,22 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
             val result = pss.foldRight(bod):
               case (ps, block) => 
                 Return(Lam(ps, block), false)
+            val impls = bod match
+              case Define(ClsLikeDefn(k = syntax.Trt, traits = impls), rest) => S(impls)
+              case _ => N
+            val implsDoc = impls
+              .map(impls => implsJs(sym, impls,  doc" # ${getVar(sym)}.symbol = Symbol();"))
+              .getOrElse(doc"")
             val name = if sym.nameIsMeaningful then S(sym.nme) else N
             val (params, bodyDoc) = setupFunction(name, ps, result)
             if sym.nameIsMeaningful then
               // If the name is not valid JavaScript identifiers, do not use it in the generated function.
               val nme = if isValidIdentifier(sym.nme) then sym.nme else ""
-              doc"${getVar(sym)} = function $nme($params) ${ braced(bodyDoc) };"
+              doc"${getVar(sym)} = function $nme($params) ${ braced(bodyDoc) };${implsDoc}"
             else
               // in JS, let name = (0, function (args) => {} ) prevents function's name from being bound to `name`
               doc"${getVar(sym)} = (undefined, function ($params) ${ braced(bodyDoc) });"
-          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, impls, mtds, privFlds, pubFlds, preCtor, ctor) =>
+          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, impls, mtds, privFlds, pubFlds, _, preCtor, ctor) =>
             // * Note: `_pubFlds` is not used because in JS, fields are not declared
             val clsParams = paramsOpt.fold(Nil)(_.paramSyms)
             val ctorParams = clsParams.map(p => p -> scope.allocateName(p))
@@ -334,11 +343,8 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
                   S(doc"function $nme($ps) ${ funBodRet }")
                 case Nil => N
               
-              val implsJs = impls.foldLeft(doc""):
-                case (acc, im) =>
-                  doc"${acc} # ${getVar(sym)}[${result(im)}] = 'Symbol';"
-              
-              val res = ownr match
+              val implsDoc: Document = if kind is syntax.Trt then "" else implsJs(sym, impls, "")
+              val resDoc = ownr match
               case S(owner) =>
                 val ths = mkThis(owner)
                 fun match
@@ -350,7 +356,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
                 fun match
                 case S(f) => doc"${getVar(sym)} = ${f}; # ${getVar(sym)}.class = ${clsJS};"
                 case N => doc"${getVar(sym)} = ${clsJS};"
-              doc"${res}${implsJs}"
+              doc"${resDoc}${implsDoc}"
         thisProxy match
           case S(proxy) if !scope.thisProxyDefined =>
             scope.thisProxyDefined = true

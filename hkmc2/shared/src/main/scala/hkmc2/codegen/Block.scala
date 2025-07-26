@@ -38,8 +38,8 @@ sealed abstract class Block extends Product with AutoLocated:
     case AssignDynField(lhs, fld, arrayIdx, rhs, rest) => lhs :: fld :: rhs :: rest :: Nil
     case Define(FunDefn(owner, sym, params, body), rest) => sym :: (params :+ body :+ rest)
     case Define(ValDefn(owner, k, sym, rhs), rest) => sym :: rhs :: rest :: Nil
-    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, implSyms, methods, privFlds, pubFlds, preCtor, ctor), rest) =>
-      isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++ privFlds ++ pubFlds
+    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, implSyms, methods, privFlds, pubFlds, abstractFlds, preCtor, ctor), rest) =>
+      isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++ privFlds ++ pubFlds ++ abstractFlds // is this correct?
       ++ preCtor.subBlocks ++ ctor.subBlocks :+ rest
     case HandleBlock(lhs, res, par, args, cls, handlers, body, rest) =>
       lhs :: res :: par :: args ++ handlers.flatMap: handler =>
@@ -330,7 +330,7 @@ sealed abstract class Defn:
     case FunDefn(own, sym, params, body) => body.freeVars -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVars
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, implSyms,
-        methods, privateFields, publicFields, preCtor, ctor) =>
+        methods, privateFields, publicFields, abstractFields, preCtor, ctor) =>
       preCtor.freeVars
         ++ ctor.freeVars ++ methods.flatMap(_.freeVars)
         -- auxParams.flatMap(_.paramSyms)
@@ -339,7 +339,7 @@ sealed abstract class Defn:
     case FunDefn(own, sym, params, body) => body.freeVarsLLIR -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVarsLLIR
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, implSyms,
-        methods, privateFields, publicFields, preCtor, ctor) =>
+        methods, privateFields, publicFields, abstractFields, preCtor, ctor) =>
       preCtor.freeVarsLLIR
         ++ ctor.freeVarsLLIR ++ methods.flatMap(_.freeVarsLLIR)
         -- auxParams.flatMap(_.paramSyms)
@@ -372,6 +372,7 @@ final case class ClsLikeDefn(
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
     publicFields: Ls[BlockMemberSymbol],
+    abstractFields: Ls[TermDefinition],
     preCtor: Block,
     ctor: Block,
 ) extends Defn:

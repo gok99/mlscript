@@ -1205,6 +1205,7 @@ extends Importer:
           newCtx.nestInner(trtSym).givenIn:
             log(s"Processing type definition $nme")
             val headerImpls =  implsOf(td.implementation, td.head)
+            val bodyImpls = body.map(bodyImplsOf).getOrElse(Nil)
             val (bod, _) = mkBody
             val valueSym = VarSymbol(Ident("base"))
             val mtdSym = BlockMemberSymbol(trtSym.nme, Nil, true)
@@ -1212,11 +1213,11 @@ extends Importer:
               owner, Trt, trtSym, mtdSym, tps, pss, 
               S(New(valueSym.ref(Ident("base")), Nil, N)),
               // N,
-              headerImpls, ObjBody(bod), annotations)
-            val body = Blk(innerTrt :: Nil, mtdSym.ref(Ident(mtdSym.nme)))
+              headerImpls ++ bodyImpls, ObjBody(bod), annotations)
+            val fBody = Blk(innerTrt :: Nil, mtdSym.ref(Ident(mtdSym.nme)))
             val cd = TermDefinition(
               owner, TrtFun, sym, PlainParamList(Param(FldFlags.empty, valueSym, N, Modulefulness.none) :: Nil) :: Nil,
-              N, N, S(body), FlowSymbol(s"‹result of trait ${mtdSym.nme}›"), TermDefFlags.empty, Modulefulness.none, Nil
+              N, N, S(fBody), FlowSymbol(s"‹result of trait ${mtdSym.nme}›"), TermDefFlags.empty, Modulefulness.none, Nil
             )
             trtSym.defn = S(innerTrt)
             cd

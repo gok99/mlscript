@@ -159,7 +159,7 @@ class BlockTransformer(subst: SymbolSubst):
     case defn: FunDefn => applyFunDefn(defn)
     case defn: ValDefn => applyValDefn(defn)
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentPath, implPaths, methods, 
-      privateFields, publicFields, preCtor, ctor) =>
+      privateFields, publicFields, abstractFields, preCtor, ctor) =>
       val own2 = own.mapConserve(_.subst)
       val isym2 = isym.subst
       val sym2 = sym.subst
@@ -181,7 +181,7 @@ class BlockTransformer(subst: SymbolSubst):
           (publicFields2 is publicFields) &&
           (preCtor2 is preCtor) && (ctor2 is ctor)
         then defn else ClsLikeDefn(own2, isym2, sym2, k, paramsOpt2, 
-          auxParams2, parentPath2, implPaths2, methods2, privateFields2, publicFields2, preCtor2, ctor2)
+          auxParams2, parentPath2, implPaths2, methods2, privateFields2, publicFields2, abstractFields, preCtor2, ctor2)
   
   def applyArg(arg: Arg): Arg =
     val val2 = applyPath(arg.value)

@@ -121,10 +121,10 @@ class StackSafeTransform(depthLimit: Int, paths: HandlerPaths)(using State):
 
   def rewriteCls(defn: ClsLikeDefn, isTopLevel: Bool): ClsLikeDefn = 
     val ClsLikeDefn(owner, isym, sym, k, paramsOpt, auxParams,
-      parentPath, implPaths, methods, privateFields, publicFields, preCtor, ctor) = defn
+      parentPath, implPaths, methods, privateFields, publicFields, abstractFields, preCtor, ctor) = defn
     ClsLikeDefn(
       owner, isym, sym, k, paramsOpt, auxParams, parentPath, implPaths, methods.map(rewriteFn), privateFields,
-      publicFields, rewriteBlk(preCtor),
+      publicFields, abstractFields, rewriteBlk(preCtor),
       if isTopLevel && (defn.k is syntax.Mod) then transformTopLevel(ctor) else rewriteBlk(ctor)
     )
 
