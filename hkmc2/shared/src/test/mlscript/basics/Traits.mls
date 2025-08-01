@@ -1,0 +1,205 @@
+:js
+
+trait Pred
+
+:rt
+trait Lel with
+    trait What with
+        require Lel
+        val y: String
+        implement Lel with
+            val x = 1
+    require Pred
+    val x: Int
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:Lel
+//│       bsym = member:Lel
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           TraitDef:
+//│             owner = S of trait:Lel
+//│             sym = trait:What
+//│             bsym = member:What
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 Require:
+//│                   sym = member:Lel
+//│                   mod = trait:Lel
+//│                   path = S of Ref{member:Lel} of member:Lel
+//│                 TermDefinition:
+//│                   owner = S of trait:What
+//│                   k = ImmutVal
+//│                   sym = member:y
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = S of Ref{member:String} of member:String
+//│                   body = N
+//│                   resSym = ‹result of member:y›
+//│                   flags = ()
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│                 Plain:
+//│                   owner = S of trait:What
+//│                   kind = Imp
+//│                   sym = class:Lel
+//│                   bsym = member:Lel
+//│                   tparams = Nil
+//│                   ext = N
+//│                   body = ObjBody of Blk:
+//│                     stats = Ls of 
+//│                       TermDefinition:
+//│                         owner = S of class:Lel
+//│                         k = ImmutVal
+//│                         sym = member:x
+//│                         params = Nil
+//│                         tparams = N
+//│                         sign = N
+//│                         body = S of Lit of IntLit of 1
+//│                         resSym = ‹result of member:x›
+//│                         flags = (method)
+//│                         modulefulness = Modulefulness of N
+//│                         annotations = Nil
+//│                     res = Lit of UnitLit of false
+//│                   companion = N
+//│                   trt = S of Ref{member:Lel} of member:Lel
+//│                   annotations = Nil
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│           Require:
+//│             sym = member:Pred
+//│             mod = trait:Pred
+//│             path = S of Ref{member:Pred} of member:Pred
+//│           TermDefinition:
+//│             owner = S of trait:Lel
+//│             k = ImmutVal
+//│             sym = member:x
+//│             params = Nil
+//│             tparams = N
+//│             sign = S of Ref{member:Int} of member:Int
+//│             body = N
+//│             resSym = ‹result of member:x›
+//│             flags = ()
+//│             modulefulness = Modulefulness of N
+//│             annotations = Nil
+//│         res = Lit of UnitLit of false
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+:rt
+trait Lol with
+    require Lel
+    val x = 1
+    // val y = 2
+    implement Lel.Pred with
+        val l = 1
+        val r = 2
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:Lol
+//│       bsym = member:Lol
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           Require:
+//│             sym = member:Lel
+//│             mod = trait:Lel
+//│             path = S of Ref{member:Lel} of member:Lel
+//│           TermDefinition:
+//│             owner = S of trait:Lol
+//│             k = ImmutVal
+//│             sym = member:x
+//│             params = Nil
+//│             tparams = N
+//│             sign = N
+//│             body = S of Lit of IntLit of 1
+//│             resSym = ‹result of member:x›
+//│             flags = ()
+//│             modulefulness = Modulefulness of N
+//│             annotations = Nil
+//│           Plain:
+//│             owner = S of trait:Lol
+//│             kind = Imp
+//│             sym = class:Pred
+//│             bsym = member:Pred
+//│             tparams = Nil
+//│             ext = N
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 TermDefinition:
+//│                   owner = S of class:Pred
+//│                   k = ImmutVal
+//│                   sym = member:l
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = N
+//│                   body = S of Lit of IntLit of 1
+//│                   resSym = ‹result of member:l›
+//│                   flags = (method)
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│                 TermDefinition:
+//│                   owner = S of class:Pred
+//│                   k = ImmutVal
+//│                   sym = member:r
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = N
+//│                   body = S of Lit of IntLit of 2
+//│                   resSym = ‹result of member:r›
+//│                   flags = (method)
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│               res = Lit of UnitLit of false
+//│             companion = N
+//│             trt = S of Sel{trait:Pred}:
+//│               prefix = Ref{member:Lel} of member:Lel
+//│               nme = Ident of "Pred"
+//│             annotations = Nil
+//│         res = Lit of UnitLit of false
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+:rt
+class A with
+    require Lol
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     Plain:
+//│       owner = N
+//│       kind = Cls
+//│       sym = class:A
+//│       bsym = member:A
+//│       tparams = Nil
+//│       ext = N
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           Require:
+//│             sym = member:Lol
+//│             mod = trait:Lol
+//│             path = S of Ref{member:Lol} of member:Lol
+//│         res = Lit of UnitLit of false
+//│       companion = N
+//│       trt = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: checkVirtuals (TraitResolver.scala:152)
+//│ ╔══[ERROR] Concrete class contains virtual fields: x
+//│ ║  l.178: 	class A with
+//│ ╙──       	      ^

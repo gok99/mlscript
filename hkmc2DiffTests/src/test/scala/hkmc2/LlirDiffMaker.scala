@@ -17,6 +17,7 @@ import hkmc2.codegen.llir._
 import hkmc2.codegen.cpp._
 import hkmc2.semantics.Elaborator
 import scala.collection.mutable.ListBuffer
+import hkmc2.codegen.TraitResolver
 
 abstract class LlirDiffMaker extends BbmlDiffMaker:
   val llir = NullaryCommand("llir")
@@ -63,8 +64,10 @@ abstract class LlirDiffMaker extends BbmlDiffMaker:
     super.processTerm(trm, inImport)
     if llir.isSet then
       val low = ltl.givenIn:
-        codegen.Lowering()
-      var le = low.program(trm)
+        curTCtx.givenIn:
+          codegen.Lowering()
+      var (le, tctx) = low.program(trm)
+      curTCtx = tctx
       given Scope = scope
       given Ctx = ctx
       val llb = LlirBuilder(tl, freshId)

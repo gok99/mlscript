@@ -73,7 +73,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
         }"
       case N => summon[Scope].lookup_!(ts)
     case ts: semantics.InnerSymbol =>
-      if ts.asMod.isDefined
+      if ts.asMod.isDefined || ts.asTrt.isDefined
       then
         // * Module self-references use the module name itself instead of `this`
         summon[Scope].lookup_!(ts)
@@ -225,7 +225,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
             else
               // in JS, let name = (0, function (args) => {} ) prevents function's name from being bound to `name`
               doc"${getVar(sym)} = (undefined, function ($params) ${ braced(bodyDoc) });"
-          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, mtds, privFlds, pubFlds, preCtor, ctor) =>
+          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, mtds, privFlds, pubFlds, virtual, preCtor, ctor) =>
             val clsParams = paramsOpt.fold(Nil)(_.paramSyms)
             val ctorParams = clsParams.map(p => p -> scope.allocateName(p))
             val ctorFields = ctorParams.filter: p =>
@@ -234,7 +234,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
               case _ => false
             val ctorAuxParams = auxParams.map(ps => ps.params.map(p => p.sym -> scope.allocateName(p.sym)))
             
-            val isModule = kind is syntax.Mod
+            val isModule = (kind is syntax.Mod) || (kind is syntax.Trt)
             val mtdPrefix = if isModule then "static " else ""
             
             // * Note: the non-mut-val parts of `pubFlds` are not used because in JS, fields are not declared

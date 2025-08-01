@@ -377,7 +377,7 @@ extends Importer:
       derivedClsSym.defn = S(ClassDef(
         N, syntax.Cls, derivedClsSym,
         BlockMemberSymbol(derivedClsSym.name, Nil),
-        Nil, Nil, N, ObjBody(Blk(Nil, Term.Lit(Tree.UnitLit(false)))), List()))
+        Nil, Nil, N, ObjBody(Blk(Nil, Term.Lit(Tree.UnitLit(false)))), N, List()))
       
       val elabed = ctx.nestInner(derivedClsSym).givenIn:
         block(sts_, hasResult = false)._1
@@ -807,7 +807,7 @@ extends Importer:
       case (name, sym) =>
         val defns = sym.trees.collect:
           case td: TermDef if td.rhs.isDefined => td
-          case td: TypeDef => td
+          case td: TypeDef if td.k != Imp => td
         if defns.length > 1 then
           raise(ErrorReport(msg"Multiple definitions of symbol '$name'" -> N ::
             defns.map(msg"defined here" -> _.toLoc)))
@@ -976,6 +976,20 @@ extends Importer:
           raise(ErrorReport(msg"Unrecognized definitional assignment left-hand side: ${lhs.describe}"
             -> lhs.toLoc :: Nil)) // TODO BE
           go(sts, Nil, Term.Error :: acc)
+      // case (req @ TermDef(Req, hd, rhs)) :: sts =>
+      //   log(s"Processing require statement $hd")
+      //   req.name match
+      //   case R(id) =>
+      //     val als = req.annotatedResultType match
+      //       case S(Ident(name)) => name
+      //       case _ => id.name
+      //     val sym = members.getOrElse(id.name, die)
+      //     val req = Require(Tr)
+      //     go(sts, Nil, acc)
+      //   case L(d) =>
+      //     reportUnusedAnnotations
+      //     raise(d)
+      //     go(sts, Nil, acc)
       case (td @ TermDef(k, nme, rhs)) :: sts =>
         log(s"Processing term definition $nme")
         td.symbName match
@@ -1041,7 +1055,7 @@ extends Importer:
             go(sts, Nil, acc)
       case (td @ TypeDef(k, head, rhs)) :: sts =>
         
-        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Pat), k)
+        assert((k is Als) || (k is Cls) || (k is Mod) || (k is Obj) || (k is Pat) || (k is Trt) || (k is Req) || (k is Imp), k)
         val body = td.withPart
         
         td.symbName match
@@ -1053,7 +1067,40 @@ extends Importer:
             raise(d)
             return go(sts, Nil, acc)
         val sym = members.getOrElse(nme.name, lastWords(s"Symbol not found: ${nme.name}"))
-        
+        var trtPathOpt: Opt[Resolvable] = N
+
+        // TODO: cleanup
+        if (k is Req) || (k is Imp) then
+          ctx.parent.get.givenIn:
+            val err = ErrorReport(msg"Illegal form of require/implement." -> td.toLoc :: Nil)
+            val (trtName, path) = td.annotatedResultType match
+              case S(s @ Ident(name)) => subterm(s, false, false) match
+                case r: ResolvableImpl => (name, S(r))
+                case _ => raise(err)
+                  return go(sts, Nil, acc)
+              case S(s: Sel) => subterm(s, false, false) match
+                case s @ Term.Sel(prefix, nme) => (nme.name, S(s))
+                case _ => raise(err)
+                  return go(sts, Nil, acc)
+              case N => subterm(nme, false, false) match
+                case r: ResolvableImpl => (nme.name, S(r))
+                case _ => raise(err)
+                  return go(sts, Nil, acc)
+              case _ => raise(err)
+                return go(sts, Nil, acc)
+
+            val trtSymbol = ctx.get(trtName)
+                .flatMap(_.symbol)
+                .flatMap(_.asTrt)
+            
+            if trtSymbol.isEmpty then
+              raise(ErrorReport(msg"Trait '${nme.name}' not found." -> nme.toLoc :: Nil))
+              return go(sts, Nil, acc)
+            if k is Req then
+              return go(sts, Nil, Require(sym, trtSymbol.get, path) :: acc)
+            else
+              trtPathOpt = path
+
         var newCtx = S(td.symbol).collectFirst:
             case s: InnerSymbol => s
           .fold(ctx.nest(OuterCtx.NonReturnContext))(ctx.nestInner(_))
@@ -1208,15 +1255,25 @@ extends Importer:
               ModuleDef(owner, clsSym, sym, tps, pss.headOption, pss.tailOr(Nil), newOf(td), k, ObjBody(bod), annotations)
             clsSym.defn = S(cd)
             cd
-        case Cls =>
+        case k: (Cls.type | Imp.type) =>
           val clsSym = td.symbol.asInstanceOf[ClassSymbol] // TODO: improve `asInstanceOf`
           val owner = ctx.outer.inner
           newCtx.nestInner(clsSym).givenIn:
             log(s"Processing type definition $nme")
             val cd =
               val (bod, c) = mkBody
-              ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), ObjBody(bod), annotations)
+              ClassDef(owner, k, clsSym, sym, tps, pss, newOf(td), ObjBody(bod), trtPathOpt, annotations)
             clsSym.defn = S(cd)
+            cd
+        case Trt => 
+          val trtSym = td.symbol.asInstanceOf[TraitSymbol] // TODO: improve `asInstanceOf`
+          val owner = ctx.outer.inner
+          newCtx.nestInner(trtSym).givenIn:
+            log(s"Processing type definition $nme")
+            val cd =
+              val (bod, c) = mkBody
+              TraitDef(owner, trtSym, sym, tps, pss.headOption, pss.tailOr(Nil), ObjBody(bod), annotations)
+            trtSym.defn = S(cd)
             cd
         sym.defn = S(defn)
         go(sts, Nil, defn :: acc)

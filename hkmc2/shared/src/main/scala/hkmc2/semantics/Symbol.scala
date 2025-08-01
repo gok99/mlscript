@@ -40,6 +40,10 @@ abstract class Symbol(using State) extends Located:
     case _ => N
   def asMod: Opt[ModuleSymbol] = asModOrObj.filter(_.tree.k is Mod)
   def asObj: Opt[ModuleSymbol] = asModOrObj.filter(_.tree.k is Obj)
+  def asTrt: Opt[TraitSymbol] = this match
+    case trt: TraitSymbol => S(trt)
+    case mem: BlockMemberSymbol => mem.trtTree.flatMap(_.symbol.asTrt) // where is this used?
+    case _ => N
   def asClsOrMod: Opt[ClassSymbol | ModuleSymbol] = asCls orElse asModOrObj
   /* 
   def asTrm: Opt[TermSymbol] = this match
@@ -151,6 +155,8 @@ class BlockMemberSymbol(val nme: Str, val trees: Ls[Tree], val nameIsMeaningful:
     case t: Tree.TypeDef if t.k is Als => t
   def patTree: Opt[Tree.TypeDef] = trees.collectFirst:
     case t: Tree.TypeDef if t.k is Pat => t
+  def trtTree: Opt[Tree.TypeDef] = trees.collectFirst:
+    case t: Tree.TypeDef if (t.k is Trt) => t
   def trmTree: Opt[Tree.TermDef] = trees.collectFirst:
     case t: Tree.TermDef /* if t.k is  */ => t
   def trmImplTree: Opt[Tree.TermDef] = trees.collectFirst:
@@ -224,7 +230,7 @@ case class ErrorSymbol(val nme: Str, tree: Tree)(using State) extends MemberSymb
   override def toString = s"error:$nme"
 
 sealed trait ClassLikeSymbol extends Symbol:
-  self: MemberSymbol[? <: ClassDef | ModuleDef] =>
+  self: MemberSymbol[? <: ClassDef | ModuleDef | TraitDef] =>
   val tree: Tree.TypeDef
   def subst(using sub: SymbolSubst): ClassLikeSymbol
 
@@ -283,6 +289,24 @@ class PatternSymbol(val id: Tree.Ident, val params: Opt[Tree.Tup], val body: Tre
   var patternParams: Ls[Param] = Nil
   
   override def subst(using sub: SymbolSubst): PatternSymbol = sub.mapPatSym(this)
+
+class TraitSymbol(val tree: Tree.TypeDef, val id: Tree.Ident)(using State) 
+  extends MemberSymbol[TraitDef] with ClassLikeSymbol with CtorSymbol with InnerSymbol with NamedSymbol:
+  def nme = id.name
+  def name: Str = nme
+  def toLoc: Option[Loc] = id.toLoc // TODO track source tree of trait here
+  override def toString: Str = s"trait:${id.name}${State.dbgUid(uid)}"
+
+  override def subst(using sub: SymbolSubst): TraitSymbol = sub.mapTraitSym(this)
+
+// class RequireSymbol(val id: Tree.Ident, val requiredTrait: TraitSymbol)(using State)
+//     extends MemberSymbol[TraitDef] with InnerSymbol with NamedSymbol:
+//   def nme = id.name
+//   def name: Str = nme
+//   def toLoc: Option[Loc] = id.toLoc // TODO track source tree of require here
+//   override def toString: Str = s"require:${id.name}${State.dbgUid(uid)}:${requiredTrait.nme}"
+
+//   override def subst(using sub: SymbolSubst): RequireSymbol = sub.mapRequireSym(this)
 
 class TopLevelSymbol(blockNme: Str)(using State)
     extends MemberSymbol[ModuleDef] with InnerSymbol:

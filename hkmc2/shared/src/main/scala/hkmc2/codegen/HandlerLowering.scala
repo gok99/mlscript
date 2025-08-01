@@ -475,7 +475,7 @@ class HandlerLowering(paths: HandlerPaths, opt: EffectHandlers)(using TL, Raise,
       BlockMemberSymbol(h.cls.id.name, Nil),
       syntax.Cls,
       N, Nil,
-      S(h.par), handlerMtds, Nil, Nil,
+      S(h.par), handlerMtds, Nil, Nil, L(Nil),
       Assign(freshTmp(), Call(Value.Ref(State.builtinOpsMap("super")), h.args.map(_.asArg))(true, true), End()), End()) // TODO: handle effect in super call
     // NOTE: the super call is inside the preCtor
     // during resumption we need to resume both the this.x = x bindings done in JSBuilder and the ctor
@@ -635,6 +635,7 @@ class HandlerLowering(paths: HandlerPaths, opt: EffectHandlers)(using TL, Raise,
       resumeFnDef :: debugMtds,
       Nil,
       Nil,
+      L(Nil),
       Assign(freshTmp(), PureCall(
         Value.Ref(State.builtinOpsMap("super")), // refers to runtime.FunctionContFrame which is pure
         Value.Lit(Tree.UnitLit(true)) :: Nil), End()),

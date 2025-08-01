@@ -54,7 +54,7 @@ end Subst
 import Subst.subst
 
 
-class Lowering()(using Config, TL, Raise, State, Ctx):
+class Lowering()(using Config, TL, Raise, State, Ctx, TraitResolver.TCtx):
   
   val lowerHandlers: Bool = config.effectHandlers.isDefined
   val lift: Bool = config.liftDefns.isDefined
@@ -191,6 +191,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
                 mtds,
                 privateFlds,
                 publicFlds,
+                L(Nil),
                 End(),
                 ctor
               ),
@@ -202,11 +203,11 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
             Define(
               ClsLikeDefn(
                 cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp),
-                mtds, privateFlds, publicFlds, pctor, ctor
+                mtds, privateFlds, publicFlds, L(Nil), pctor, ctor
               ),
               blockImpl(stats, res)(k)
             )
-      case td: TypeDef => // * Type definitions are erased
+      case td: (TypeDef | Require) => // * Type definitions are erased
         blockImpl(stats, res)(k)
   
   
@@ -617,7 +618,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
           val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(rft)
           val pctor = parentConstructor(cls, ass)
           val clsDef = ClsLikeDefn(N, isym, sym, syntax.Cls, N, Nil, S(sr),
-            mtds, privateFlds, publicFlds, pctor, ctor)
+            mtds, privateFlds, publicFlds, L(Nil), pctor, ctor)
           val inner = new New(sym.ref().noIArgs, Nil, N)
           Define(clsDef, term_nonTail(if mut then Mut(inner) else inner)(k))
       
@@ -879,9 +880,13 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         Assign(l, r, k(l |> Value.Ref.apply))
   
   
-  def program(main: st.Blk): Program =
+  def program(main: st.Blk): (Program, TraitResolver.TCtx) =
     
     val (imps, funs, rest) = splitBlock(main.stats, Nil, Nil, Nil)
+    
+    // Resolve trait obligations before lowering to eliminate runtime trait selection
+    val trtResolver = TraitResolver()
+    val tctx = trtResolver.resolveAndCheck(funs ::: rest)
     
     val blk = block(funs ::: rest, R(main.res))(ImplctRet)(using Subst.empty)
     
@@ -902,10 +907,10 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
     
     val res = MergeMatchArmTransformer.applyBlock(lifted)
     
-    Program(
+    (Program(
       imps.map(imp => imp.sym -> imp.file),
       res
-    )
+    ), tctx)
   
   
   def setupSelection(prefix: Term, nme: Tree.Ident, sym: Opt[FieldSymbol])(k: Result => Block)(using Subst): Block =
