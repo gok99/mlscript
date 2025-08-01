@@ -244,6 +244,8 @@ sealed trait Statement extends AutoLocated with ProductWithExtraInfo:
       cls.paramsOpt.toList.flatMap(_.subTerms) ::: cls.body.blk :: cls.annotations.flatMap(_.subTerms)
     case mod: ModuleDef =>
       mod.paramsOpt.toList.flatMap(_.subTerms) ::: mod.body.blk :: mod.annotations.flatMap(_.subTerms)
+    case trt: TraitDef =>
+      trt.paramsOpt.toList.flatMap(_.subTerms) ::: trt.body.blk :: trt.annotations.flatMap(_.subTerms)
     case td: TypeDef =>
       td.rhs.toList ::: td.annotations.flatMap(_.subTerms)
     case pat: PatternDef =>
@@ -253,6 +255,7 @@ sealed trait Statement extends AutoLocated with ProductWithExtraInfo:
     case Handle(lhs, rhs, args, derivedClsSym, defs, bod) => rhs :: args ::: defs.flatMap(_.td.subTerms) ::: bod :: Nil
     case Neg(e) => e :: Nil
     case Annotated(ann, target) => ann.subTerms ::: target :: Nil
+    case Require(mod, sym, path) => path.toList
   
   // private def treeOrSubterms(t: Tree, t: Term): Ls[Located] = t match
   private def treeOrSubterms(t: Tree): Ls[Located] = t match
@@ -349,6 +352,7 @@ sealed trait Statement extends AutoLocated with ProductWithExtraInfo:
     case Ret(res) => s"return ${res.showDbg}"
     case TypeDef(sym, tparams, rhs, _, _) =>
       s"type ${sym}${tparams.mkStringOr(", ", "[", "]")} = ${rhs.fold("")(x => x.showDbg)}"
+    case Require(mod, sym, path) => s"require ${sym} = ${mod}"
     case Missing => "missing"
 
 final case class LetDecl(sym: LocalSymbol, annotations: Ls[Annot]) extends Statement
@@ -427,12 +431,17 @@ final case class HandlerTermDefinition(
   td: TermDefinition
 )
 
+final case class Require(sym: BlockMemberSymbol, mod: TraitSymbol, path: Opt[Term]) 
+  extends CompanionValue:
+  val annotations: Ls[Annot] = Nil
+
 case class ObjBody(blk: Term.Blk):
   
   lazy val members: Map[Str, FieldSymbol] = blk.stats.collect:
     case td: TermDefinition => td.sym.nme -> td.sym
     case td: ClassLikeDef => td.sym.nme -> td.sym
     case td: TypeDef => td.sym.nme -> td.sym
+    case rq: Require => rq.sym.nme -> rq.mod
   .toMap
   
   lazy val (methods, nonMethods) = blk.stats.partitionMap:
@@ -506,6 +515,19 @@ case class PatternDef(
   val kind: ClsLikeKind = Pat
   val ext: Opt[New] = N
 
+case class TraitDef(
+    owner: Opt[InnerSymbol],
+    sym: TraitSymbol,
+    bsym: BlockMemberSymbol,
+    tparams: Ls[TyParam],
+    paramsOpt: Opt[ParamList],
+    auxParams: Ls[ParamList],
+    body: ObjBody,
+    annotations: Ls[Annot],
+) extends ClassLikeDef:
+  self =>
+  val kind: ClsLikeKind = Trt
+  val ext: Opt[New] = N
 
 sealed abstract class ClassDef extends ClassLikeDef:
   val kind: ClsLikeKind
@@ -532,6 +554,7 @@ object ClassDef:
       params: Ls[ParamList],
       ext: Opt[New],
       body: ObjBody,
+      trt: Opt[Resolvable],
       annotations: Ls[Annot],
   ): ClassDef =
     params match
@@ -540,7 +563,7 @@ object ClassDef:
         , tparams, ps, pss, ext, body, N, annotations)
       case Nil => Plain(owner, kind, sym.asInstanceOf// TODO: improve
         , bsym
-        , tparams, ext, body, N, annotations)
+        , tparams, ext, body, N, trt, annotations)
   
   def unapply(cls: ClassDef): Opt[(ClassSymbol, Ls[TyParam], Opt[ParamList], ObjBody)] =
     S((cls.sym, cls.tparams, cls.paramsOpt, cls.body))
@@ -567,6 +590,7 @@ object ClassDef:
       tparams: Ls[TyParam],
       ext: Opt[New],
       body: ObjBody, companion: Opt[CompanionValue],
+      trt: Opt[Resolvable],
       annotations: Ls[Annot]
   ) extends ClassDef:
     val paramsOpt: Opt[ParamList] = N

@@ -447,7 +447,16 @@ class Resolver(tl: TraceLogger)
     // Traverse through other subterms with original context.
     case defn: ClassLikeDef =>
       log(s"Resolving ${defn.kind.desc} definition $defn")
+      defn match
+        // fully resolve `implement` blocks
+        case plain: ClassDef.Plain =>
+          defn.asInstanceOf[ClassDef.Plain].trt.foreach(traverse(_, expect = Any))
+        case _ =>
       traverseClassLikeDef(defn)
+      ictx
+
+    case t: Require =>
+      t.subTerms.foreach(traverse(_, expect = Any))
       ictx
     
     // Case: other definition forms. Just traverse through the sub-terms.
@@ -710,7 +719,8 @@ class Resolver(tl: TraceLogger)
     case t @ AnySel(lhs: Resolvable, id) =>
       log(s"Resolving symbol for ${t}, defn = ${lhs.defn}")
       lhs.typeDefn match
-        case S(mdef @ ModuleDef(kind = Mod)) => mdef.body.members.get(id.name) match
+        case S(mdef @ (ModuleDef(kind = Mod) | _: TraitDef))=> 
+          mdef.body.members.get(id.name) match
           case S(sym) =>
             t match
               case t: Term.Sel => t.sym = S(sym)
@@ -864,6 +874,7 @@ object ModuleChecker:
       /* Type Declaration / Defintiions */
       // A type is not moduleful if it is not a module. (obvious!)
       case ModuleDef(kind = Mod) => true
+      case _: TraitDef => true
       // Objects use ModuleDef but is not moduleful.
       case _: TypeLikeDef => false
       

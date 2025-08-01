@@ -318,14 +318,17 @@ case object HandlerBind extends TermDefKind("handler", "handler binding")
 case object ParamBind extends ValLike("", "parameter")
 case object Fun extends TermDefKind("fun", "function")
 case object Ins extends TermDefKind("using", "implicit instance")
+// case object Req extends TermDefKind("require", "require trait")
 sealed abstract class TypeDefKind(desc: Str) extends DeclKind(desc)
 sealed trait ObjDefKind
 sealed trait ClsLikeKind extends ObjDefKind:
   val desc: Str
 case object Cls extends TypeDefKind("class") with ClsLikeKind
-case object Trt extends TypeDefKind("trait") with ObjDefKind
+case object Trt extends TypeDefKind("trait") with ClsLikeKind
+case object Imp extends TypeDefKind("implement") with ClsLikeKind
 case object Mxn extends TypeDefKind("mixin")
 case object Als extends TypeDefKind("type alias")
+case object Req extends TypeDefKind("require")
 case object Mod extends TypeDefKind("module") with ClsLikeKind
 case object Obj extends TypeDefKind("object") with ClsLikeKind
 case object Pat extends TypeDefKind("pattern") with ClsLikeKind
@@ -357,16 +360,18 @@ trait TypeOrTermDef:
       t match
       
       // use Foo as foo = ...
-      case InfixApp(typ, Keyword.`as`, id: Ident) if k == Ins =>
+      case InfixApp(typ, Keyword.`as`, id: Ident) if k == Ins | k == Req =>
         (S(R(id)), R(id), Nil, N, S(typ))
-      
+
       // use Foo = ...
       case typ if k == Ins =>
         val name = typ.toString()
         val id: Ident = Ident(s"instance$$$name")
         (S(R(id)), R(id), Nil, N, S(typ))
-      
-      
+
+      case s @ Sel(_, name) if k == Req | k == Imp =>
+        (S(R(name)), R(name), Nil, N, S(s))
+
       case InfixApp(tree, Keyword.`:`, ann) =>
         rec(tree, symbName, S(ann))
       
@@ -435,7 +440,9 @@ trait TypeDefImpl(using State) extends TypeOrTermDef:
       name.getOrElse(Ident("<error>")),
       paramLists.headOption,
       rhs.getOrElse(die))
-    case Trt | Mxn => ???
+    case Trt => semantics.TraitSymbol(this, name.getOrElse(Ident("<error>")))
+    case Imp => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
+    case Mxn => ???
   
   lazy val definedSymbols: Map[Str, semantics.BlockMemberSymbol] =
     // val fromParams = 

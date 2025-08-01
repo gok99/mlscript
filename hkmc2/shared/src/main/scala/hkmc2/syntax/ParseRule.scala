@@ -291,12 +291,15 @@ class ParseRules(using State):
     Kw(`fun`)(termDefBody(Fun)),
     Kw(`val`)(termDefBody(ImmutVal)),
     Kw(`using`)(termDefBody(Ins)),
+    // Kw(`require`)(termDefBody(Req)),
+    typeAliasLike(`require`, Req),
     typeAliasLike(`type`, Als),
     typeAliasLike(`pattern`, Pat),
     Kw(`class`)(typeDeclBody(Cls)),
     Kw(`trait`)(typeDeclBody(Trt)),
     Kw(`module`)(typeDeclBody(Mod)),
     Kw(`object`)(typeDeclBody(Obj)),
+    Kw(`implement`)(typeDeclBody(Imp)),
     Kw(`open`):
       ParseRule("'open' keyword")(
         exprOrBlk(ParseRule("'open' declaration")(end(()))){

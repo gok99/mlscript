@@ -100,6 +100,8 @@ object Keyword:
   val `super` = Keyword("super", N, N)
   // val `namespace` = Keyword("namespace", N, N)
   val `using` = Keyword("using", N, N)
+  val `require` = Keyword("require", N, N)
+  val `implement` = Keyword("implement", N, N)
   val `module` = Keyword("module", N, N)
   val `object` = Keyword("object", N, N)
   val `open` = Keyword("open", N, curPrec)

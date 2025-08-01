@@ -11,6 +11,7 @@ import hkmc2.semantics.Resolver
 import semantics.Elaborator.Ctx
 import hkmc2.syntax.Keyword.`override`
 import semantics.Elaborator.State
+import hkmc2.codegen.TraitResolver
 
 
 class ParserSetup(file: os.Path, dbgParsing: Bool)(using Elaborator.State, Raise):
@@ -90,11 +91,12 @@ class MLsCompiler(preludeFile: os.Path, mkOutput: ((Str => Unit) => Unit) => Uni
         blk0.res
       )
       val low = ltl.givenIn:
-        new codegen.Lowering()
-          with codegen.LoweringSelSanityChecks
+        TraitResolver.TCtx.empty.givenIn:
+          new codegen.Lowering()
+            with codegen.LoweringSelSanityChecks
       val jsb = ltl.givenIn:
         codegen.js.JSBuilder()
-      val le = low.program(blk)
+      val (le, tctx) = low.program(blk)
       val baseScp: utils.Scope =
         utils.Scope.empty
       // * This line serves for `import.meta.url`, which retrieves directory and file names of mjs files.

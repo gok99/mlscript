@@ -72,11 +72,13 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
           outerRaise(d)
         case d => outerRaise(d)
       given Elaborator.Ctx = curCtx
+      given TraitResolver.TCtx = curTCtx
       val low = ltl.givenIn:
-        codegen.Lowering()
+          codegen.Lowering()
       val jsb = ltl.givenIn:
         new JSBuilder
-      val le = low.program(blk)
+      val (le, tctx) = low.program(blk)
+      curTCtx = tctx
       val nestedScp = baseScp.nest
       val je = nestedScp.givenIn:
         jsb.program(le, N, wd)
@@ -85,20 +87,22 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
       output(jsStr)
     if js.isSet then
       given Elaborator.Ctx = curCtx
+      given TraitResolver.TCtx = curTCtx
       given Raise =
         case e: ErrorReport if reportedMessages.contains(e.mainMsg) =>
           if verbose.isSet then
             output(s"Skipping already reported diagnostic: ${e.mainMsg}")
         case d => outerRaise(d)
       val low = ltl.givenIn:
-        new codegen.Lowering()
-          with codegen.LoweringSelSanityChecks
-          with codegen.LoweringTraceLog(traceJS.isSet)
+          new codegen.Lowering()
+            with codegen.LoweringSelSanityChecks
+            with codegen.LoweringTraceLog(traceJS.isSet)
       val jsb = ltl.givenIn:
           new JSBuilder
             with JSBuilderArgNumSanityChecks
       val resSym = new TempSymbol(S(blk), "block$res")
-      val lowered0 = low.program(blk)
+      val (lowered0, tctx) = low.program(blk)
+      curTCtx = tctx
       val le = lowered0.copy(main = lowered0.main.mapTail:
         case e: End =>
           Assign(resSym, Value.Lit(syntax.Tree.UnitLit(false)), e)
