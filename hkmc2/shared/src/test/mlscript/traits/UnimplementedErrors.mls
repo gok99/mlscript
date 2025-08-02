@@ -1,0 +1,22 @@
+:js
+
+
+trait Foo with
+  val x: Int
+
+:e
+module Foo2 with
+  require Foo
+//│ ╔══[ERROR] Concrete class contains virtual fields: x
+//│ ║  l.8: 	module Foo2 with
+//│ ╙──     	       ^^^^
+
+// FIXME: only do the checks while lowering a given module
+:fixme
+1
+//│ ╔══[ERROR] Concrete class contains virtual fields: x
+//│ ║  l.8: 	module Foo2 with
+//│ ╙──     	       ^^^^
+//│ = 1
+
+

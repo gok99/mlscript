@@ -1,16 +1,23 @@
 :js
 
-trait Pred
+trait Pred with
+  fun foo(x) = x + 1
+
+:todo // should be an error
+:e
+Pred.foo(1)
+//│ = 2
 
 :rt
 trait Lel with
-    trait What with
-        require Lel
-        val y: String
-        implement Lel with
-            val x = 1
-    require Pred
-    val x: Int
+  trait What with
+    require Lel
+    val y: String
+    implement Lel with
+      val x = 1
+  require Pred
+  Pred.foo(1)
+  val x: Int
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
@@ -79,6 +86,15 @@ trait Lel with
 //│             sym = member:Pred
 //│             mod = trait:Pred
 //│             path = S of Ref{member:Pred} of member:Pred
+//│           App:
+//│             lhs = Sel{member:foo}:
+//│               prefix = Ref{member:Pred} of member:Pred
+//│               nme = Ident of "foo"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
 //│           TermDefinition:
 //│             owner = S of trait:Lel
 //│             k = ImmutVal
@@ -95,14 +111,48 @@ trait Lel with
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
 
+
+:sjs
+module M with
+  require Lel
+  implement Lel with
+    fun f(x) = x
+    val x = 1
+//│ JS (unsanitized):
+//│ let M1;
+//│ (class M {
+//│   static {
+//│     M1 = M;
+//│     this.Lel = class Lel3 {
+//│       constructor() {
+//│         this.x = 1;
+//│       }
+//│       f(x) {
+//│         return x
+//│       }
+//│       toString() { return "Lel"; }
+//│     };
+//│   }
+//│   static toString() { return "M"; }
+//│ });
+
+
+M.Lel
+//│ = class Lel3 {       constructor() {         this.x = 1;       }       get f$__checkNotMethod() { runtime.deboundMethod("f", "Lel"); }       f(...args) {         runtime.checkArgs("f", 1, true, args.length);         let x = args[0];         return x       }       toString() { return "Lel"; }     }
+
+:fixme
+M.Lel.f(1)
+//│ ═══[RUNTIME ERROR] TypeError: selRes1.f is not a function
+
+
 :rt
 trait Lol with
-    require Lel
-    val x = 1
-    // val y = 2
-    implement Lel.Pred with
-        val l = 1
-        val r = 2
+  require Lel
+  val x = 1
+  // val y = 2
+  implement Lel.Pred with
+    val l = 1
+    val r = 2
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
@@ -174,32 +224,11 @@ trait Lol with
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
 
-:rt
+:e
 class A with
-    require Lol
-//│ Resolved tree:
-//│ Blk:
-//│   stats = Ls of 
-//│     Plain:
-//│       owner = N
-//│       kind = Cls
-//│       sym = class:A
-//│       bsym = member:A
-//│       tparams = Nil
-//│       ext = N
-//│       body = ObjBody of Blk:
-//│         stats = Ls of 
-//│           Require:
-//│             sym = member:Lol
-//│             mod = trait:Lol
-//│             path = S of Ref{member:Lol} of member:Lol
-//│         res = Lit of UnitLit of false
-//│       companion = N
-//│       trt = N
-//│       annotations = Nil
-//│   res = Lit of UnitLit of false
-//│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: checkVirtuals (TraitResolver.scala:152)
+  require Lol
 //│ ╔══[ERROR] Concrete class contains virtual fields: x
-//│ ║  l.178: 	class A with
+//│ ║  l.228: 	class A with
 //│ ╙──       	      ^
+
+

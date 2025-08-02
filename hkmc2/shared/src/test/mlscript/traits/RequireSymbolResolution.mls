@@ -1,0 +1,138 @@
+:js
+
+
+trait T with
+  fun foo = id
+
+// FIXME: both selections should look the same
+:rt
+trait Lel with
+  module A with
+    fun foo = id
+  A.foo(1)
+  require T
+  T.foo(1)
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:Lel
+//│       bsym = member:Lel
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           ModuleDef:
+//│             owner = S of trait:Lel
+//│             sym = module:A
+//│             bsym = member:A
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             ext = N
+//│             kind = Mod
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 TermDefinition:
+//│                   owner = S of module:A
+//│                   k = Fun
+//│                   sym = member:foo
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = N
+//│                   body = S of SynthSel{member:id}:
+//│                     prefix = Ref{member:Predef} of member:Predef
+//│                     nme = Ident of "id"
+//│                   resSym = ‹result of member:foo›
+//│                   flags = ()
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│           App:
+//│             lhs = Sel{member:foo}:
+//│               prefix = SynthSel{module:A}:
+//│                 prefix = Ref{trait:Lel} of trait:Lel
+//│                 nme = Ident of "A"
+//│               nme = Ident of "foo"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
+//│           Require:
+//│             sym = member:T
+//│             mod = trait:T
+//│             path = S of Ref{member:T} of member:T
+//│         res = App:
+//│           lhs = Sel{member:foo}:
+//│             prefix = Ref{member:T} of member:T
+//│             nme = Ident of "foo"
+//│           rhs = Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Lit of IntLit of 1
+//│               asc = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+
+// * Note: for the record:
+:sjs
+class Parent with
+  let f = x => foo + x
+  fun foo = 123
+  fun bar =
+    let Parent = 2
+    print(foo)
+    let foo = 1
+    print(foo)
+//│ JS (unsanitized):
+//│ let Parent1;
+//│ Parent1 = class Parent {
+//│   #f;
+//│   constructor() {
+//│     let f;
+//│     const this$Parent = this;
+//│     f = function f(x) {
+//│       return this$Parent.foo + x
+//│     };
+//│     this.#f = f;
+//│   }
+//│   get foo() {
+//│     return 123;
+//│   } 
+//│   get bar() {
+//│     let Parent2, foo, tmp;
+//│     Parent2 = 2;
+//│     tmp = Predef.print(this.foo);
+//│     foo = 1;
+//│     return Predef.print(foo);
+//│   }
+//│   toString() { return "Parent"; }
+//│ };
+
+
+
+module T
+
+// FIXME: bad error
+:e
+require T
+//│ ╔══[ERROR] Trait 'T' not found.
+//│ ║  l.123: 	require T
+//│ ╙──       	        ^
+
+// FIXME: bad error
+:e
+trait T2 with
+  require T
+//│ ╔══[ERROR] Trait 'T' not found.
+//│ ║  l.131: 	  require T
+//│ ╙──       	          ^
+
+
+
+
