@@ -28,7 +28,7 @@ fun parse(tokens) =
   
   fun consume = set peek = advance
   
-  fun require(result: Expr.Expr, expected) = if peek is
+  fun reqr(result: Expr.Expr, expected) = if peek is
     Some(actual) and
       expected Token.same(actual) then
         consume
@@ -53,7 +53,7 @@ fun parse(tokens) =
         Expr.Var(name) exprCont(prec)
       Token.Identifier("(", true) then
         consume
-        expr(0) require(Token.Identifier(")", true)) exprCont(prec)
+        expr(0) reqr(Token.Identifier(")", true)) exprCont(prec)
       token then Expr.justErr of "Unexpected token " + token Token.summary()
     None then Expr.justErr of "Unexpected end of input"
   

@@ -1,0 +1,225 @@
+:js
+
+trait T with
+  fun foo = id
+
+:rt
+trait A1 with
+  T.foo(1)
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:A1
+//│       bsym = member:A1
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Nil
+//│         res = App:
+//│           lhs = Sel{member:foo}:
+//│             prefix = Ref{member:T} of member:T
+//│             nme = Ident of "foo"
+//│           rhs = Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Lit of IntLit of 1
+//│               asc = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+:rt
+trait A2 with
+  require T
+  T.foo(1)
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:A2
+//│       bsym = member:A2
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           Require:
+//│             sym = member:T
+//│             mod = trait:T
+//│             path = S of Ref{member:T} of member:T
+//│         res = App:
+//│           lhs = Sel{member:foo}:
+//│             prefix = Ref{member:T} of member:T
+//│             nme = Ident of "foo"
+//│           rhs = Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Lit of IntLit of 1
+//│               asc = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+:todo // shouldn't error
+:rt
+trait A3 with
+  T.foo(1)
+  require T
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:A3
+//│       bsym = member:A3
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           App:
+//│             lhs = Sel{member:foo}:
+//│               prefix = SynthSel{trait:T}:
+//│                 prefix = Ref{trait:A3} of trait:A3
+//│                 nme = Ident of "T"
+//│               nme = Ident of "foo"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
+//│           Require:
+//│             sym = member:T
+//│             mod = trait:T
+//│             path = S of Ref{member:T} of member:T
+//│         res = Lit of UnitLit of false
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+
+// this does the right thing
+:rt
+trait A4 with
+  trait T with
+    fun foo = id
+  T.foo(1)
+  require T as T2
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:A4
+//│       bsym = member:A4
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           TraitDef:
+//│             owner = S of trait:A4
+//│             sym = trait:T
+//│             bsym = member:T
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 TermDefinition:
+//│                   owner = S of trait:T
+//│                   k = Fun
+//│                   sym = member:foo
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = N
+//│                   body = S of SynthSel{member:id}:
+//│                     prefix = Ref{member:Predef} of member:Predef
+//│                     nme = Ident of "id"
+//│                   resSym = ‹result of member:foo›
+//│                   flags = ()
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│           App:
+//│             lhs = Sel{member:foo}:
+//│               prefix = SynthSel{trait:T}:
+//│                 prefix = Ref{trait:A4} of trait:A4
+//│                 nme = Ident of "T"
+//│               nme = Ident of "foo"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
+//│           Require:
+//│             sym = member:T2
+//│             mod = trait:T
+//│             path = S of Ref{member:T} of member:T
+//│         res = Lit of UnitLit of false
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+// but not this??
+:rt
+trait A4 with
+  trait T with
+    fun foo = id
+  require T as T2
+  T.foo(1)
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:A4
+//│       bsym = member:A4
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           TraitDef:
+//│             owner = S of trait:A4
+//│             sym = trait:T
+//│             bsym = member:T
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 TermDefinition:
+//│                   owner = S of trait:T
+//│                   k = Fun
+//│                   sym = member:foo
+//│                   params = Nil
+//│                   tparams = N
+//│                   sign = N
+//│                   body = S of SynthSel{member:id}:
+//│                     prefix = Ref{member:Predef} of member:Predef
+//│                     nme = Ident of "id"
+//│                   resSym = ‹result of member:foo›
+//│                   flags = ()
+//│                   modulefulness = Modulefulness of N
+//│                   annotations = Nil
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│           Require:
+//│             sym = member:T2
+//│             mod = trait:T
+//│             path = S of Ref{member:T} of member:T
+//│         res = App:
+//│           lhs = Sel{member:foo}:
+//│             prefix = Ref{member:T} of member:T
+//│             nme = Ident of "foo"
+//│           rhs = Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Lit of IntLit of 1
+//│               asc = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+
