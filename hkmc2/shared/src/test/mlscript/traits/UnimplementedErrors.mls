@@ -7,16 +7,12 @@ trait Foo with
 :e
 module Foo2 with
   require Foo
-//│ ╔══[ERROR] Concrete class contains virtual fields: x
-//│ ║  l.8: 	module Foo2 with
-//│ ╙──     	       ^^^^
+//│ FAILURE: Unexpected lack of type error
 
 // FIXME: only do the checks while lowering a given module
 :fixme
 1
-//│ ╔══[ERROR] Concrete class contains virtual fields: x
-//│ ║  l.8: 	module Foo2 with
-//│ ╙──     	       ^^^^
 //│ = 1
+//│ FAILURE: Unexpected lack of error to fix
 
 
