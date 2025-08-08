@@ -442,6 +442,7 @@ trait TypeDefImpl(using State) extends TypeOrTermDef:
       rhs.getOrElse(die))
     case Trt => semantics.TraitSymbol(this, name.getOrElse(Ident("<error>")))
     case Imp => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
+    case Req => semantics.ModuleSymbol(this, name.getOrElse(Ident("<error>")))
     case Mxn => ???
   
   lazy val definedSymbols: Map[Str, semantics.BlockMemberSymbol] =

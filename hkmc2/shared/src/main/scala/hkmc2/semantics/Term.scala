@@ -431,7 +431,7 @@ final case class HandlerTermDefinition(
   td: TermDefinition
 )
 
-final case class Require(sym: BlockMemberSymbol, mod: TraitSymbol, path: Opt[Term]) 
+final case class Require(sym: ModuleSymbol, mod: TraitSymbol, path: Opt[Term]) 
   extends CompanionValue:
   val annotations: Ls[Annot] = Nil
 

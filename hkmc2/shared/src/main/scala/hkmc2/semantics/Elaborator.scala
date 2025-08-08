@@ -15,6 +15,7 @@ import Term.{ Blk, Rcd }
 import hkmc2.Message.MessageContext
 
 import Keyword.{`let`, `set`}
+import hkmc2.syntax.Keyword.__
 
 
 object Elaborator:
@@ -411,6 +412,7 @@ extends Importer:
         raise(ErrorReport(msg"Cannot use 'this' outside of an object scope." -> tree.toLoc :: Nil))
         Term.Error
     case id @ Ident(name) =>
+      println(ctx.env)
       ctx.get(name) match
       case S(elem) => elem.ref(id)
       case N =>
@@ -778,6 +780,9 @@ extends Importer:
     
     val members = blk.definedSymbols.toMap
     val newSignatureTrees = mutable.Map.empty[Str, Tree] // * Store trees of signatures
+
+    println(members.map:
+      case (name, sym) => s"$name: ${sym.trees.map(_.describe).mkString(", ")}")
     
     // TODO Support module overloading and roll this check up
     blk.definedSymbols.foreach:
@@ -1046,35 +1051,25 @@ extends Importer:
 
         // TODO: cleanup
         if (k is Req) || (k is Imp) then
+          val origCtx = ctx
           ctx.parent.get.givenIn:
-            val err = ErrorReport(msg"Illegal form of require/implement." -> td.toLoc :: Nil)
-            val (trtName, path) = td.annotatedResultType match
-              case S(s @ Ident(name)) => subterm(s, false, false) match
-                case r: ResolvableImpl => (name, S(r))
-                case _ => raise(err)
-                  return go(sts, Nil, acc)
-              case S(s: Sel) => subterm(s, false, false) match
-                case s @ Term.Sel(prefix, nme) => (nme.name, S(s))
-                case _ => raise(err)
-                  return go(sts, Nil, acc)
-              case N => subterm(nme, false, false) match
-                case r: ResolvableImpl => (nme.name, S(r))
-                case _ => raise(err)
-                  return go(sts, Nil, acc)
-              case _ => raise(err)
-                return go(sts, Nil, acc)
-
-            val trtSymbol = ctx.get(trtName)
-                .flatMap(_.symbol)
-                .flatMap(_.asTrt)
+            val path = td
+              .annotatedResultType.map(t => subterm(t, false, false))
+              .getOrElse(subterm(nme, false, false)) match
+                case r: ResolvableImpl => r
+                case _ => ???
+              
+            val trtSym = path match
+              case Term.Ref(sym) => sym.asTrt
+              case s @ Term.Sel(pre, nme) => s.symbol.flatMap(_.asTrt)
+              case _ => ???
             
-            if trtSymbol.isEmpty then
-              raise(ErrorReport(msg"Trait '${nme.name}' not found." -> nme.toLoc :: Nil))
-              return go(sts, Nil, acc)
             if k is Req then
-              return go(sts, Nil, Require(sym, trtSymbol.get, path) :: acc)
+              val reqSym = td.symbol.asInstanceOf[ModuleSymbol] // TODO improve `asInstanceOf`
+              origCtx.givenIn:
+                return go(sts, Nil, Require(reqSym, trtSym.get, S(path)) :: acc)
             else
-              trtPathOpt = path
+              trtPathOpt = S(path)
 
         var newCtx = S(td.symbol).collectFirst:
             case s: InnerSymbol => s
