@@ -422,7 +422,6 @@ extends Importer:
         raise(ErrorReport(msg"Cannot use 'this' outside of an object scope." -> tree.toLoc :: Nil))
         Term.Error
     case id @ Ident(name) =>
-      println(ctx.env)
       ctx.get(name) match
       case S(elem) => elem.ref(id)
       case N =>
@@ -803,9 +802,6 @@ extends Importer:
     
     val members = blk.definedSymbols.toMap
     val newSignatureTrees = mutable.Map.empty[Str, Tree] // * Store trees of signatures
-
-    println(members.map:
-      case (name, sym) => s"$name: ${sym.trees.map(_.describe).mkString(", ")}")
     
     // TODO Support module overloading and roll this check up
     blk.definedSymbols.foreach:

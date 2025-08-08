@@ -40,13 +40,13 @@ trait Lel with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 Require:
-//│                   sym = member:Lel
+//│                   sym = module:Lel
 //│                   mod = trait:Lel
 //│                   path = S of Ref{member:Lel} of member:Lel
 //│                 TermDefinition:
-//│                   owner = S of trait:What
 //│                   k = ImmutVal
 //│                   sym = member:y
+//│                   tsym = trait:What.y
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = S of Ref{member:String} of member:String
@@ -65,9 +65,9 @@ trait Lel with
 //│                   body = ObjBody of Blk:
 //│                     stats = Ls of 
 //│                       TermDefinition:
-//│                         owner = S of class:Lel
 //│                         k = ImmutVal
 //│                         sym = member:x
+//│                         tsym = class:Lel.x
 //│                         params = Nil
 //│                         tparams = N
 //│                         sign = N
@@ -83,12 +83,14 @@ trait Lel with
 //│               res = Lit of UnitLit of false
 //│             annotations = Nil
 //│           Require:
-//│             sym = member:Pred
+//│             sym = module:Pred
 //│             mod = trait:Pred
 //│             path = S of Ref{member:Pred} of member:Pred
 //│           App:
 //│             lhs = Sel{member:foo}:
-//│               prefix = Ref{member:Pred} of member:Pred
+//│               prefix = SynthSel{trait:Pred}:
+//│                 prefix = Ref{trait:Lel} of trait:Lel
+//│                 nme = Ident of "Pred"
 //│               nme = Ident of "foo"
 //│             rhs = Tup of Ls of 
 //│               Fld:
@@ -96,9 +98,9 @@ trait Lel with
 //│                 term = Lit of IntLit of 1
 //│                 asc = N
 //│           TermDefinition:
-//│             owner = S of trait:Lel
 //│             k = ImmutVal
 //│             sym = member:x
+//│             tsym = trait:Lel.x
 //│             params = Nil
 //│             tparams = N
 //│             sign = S of Ref{member:Int} of member:Int
@@ -110,6 +112,19 @@ trait Lel with
 //│         res = Lit of UnitLit of false
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:158)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL16:1:531)
+//│     at REPL16:1:607
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 
 :sjs
@@ -130,15 +145,17 @@ module M with
 //│       f(x) {
 //│         return x
 //│       }
-//│       toString() { return "Lel"; }
+//│       toString() { return runtime.render(this); }
+//│       static [definitionMetadata] = ["implement", "Lel"]; 
 //│     };
 //│   }
-//│   static toString() { return "M"; }
+//│   static toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["module", "M"]; 
 //│ });
 
 
 M.Lel
-//│ = class Lel3 {       constructor() {         this.x = 1;       }       get f$__checkNotMethod() { runtime.deboundMethod("f", "Lel"); }       f(...args) {         runtime.checkArgs("f", 1, true, args.length);         let x = args[0];         return x       }       toString() { return "Lel"; }     }
+//│ = implement Lel
 
 :fixme
 M.Lel.f(1)
@@ -166,13 +183,13 @@ trait Lol with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           Require:
-//│             sym = member:Lel
+//│             sym = module:Lel
 //│             mod = trait:Lel
 //│             path = S of Ref{member:Lel} of member:Lel
 //│           TermDefinition:
-//│             owner = S of trait:Lol
 //│             k = ImmutVal
 //│             sym = member:x
+//│             tsym = trait:Lol.x
 //│             params = Nil
 //│             tparams = N
 //│             sign = N
@@ -191,9 +208,9 @@ trait Lol with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of class:Pred
 //│                   k = ImmutVal
 //│                   sym = member:l
+//│                   tsym = class:Pred.l
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N
@@ -203,9 +220,9 @@ trait Lol with
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│                 TermDefinition:
-//│                   owner = S of class:Pred
 //│                   k = ImmutVal
 //│                   sym = member:r
+//│                   tsym = class:Pred.r
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N

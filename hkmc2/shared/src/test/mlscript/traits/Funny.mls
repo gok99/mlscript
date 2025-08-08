@@ -2,6 +2,7 @@
 
 trait T with
   fun foo = id
+  val a: Int
 
 :rt
 trait A1 with
@@ -32,8 +33,8 @@ trait A1 with
 
 :rt
 trait A2 with
-  require T
-  T.foo(1)
+  require T as T2
+  val a = T2.foo(1)
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
@@ -47,20 +48,47 @@ trait A2 with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           Require:
-//│             sym = member:T
+//│             sym = module:T2
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
-//│         res = App:
-//│           lhs = Sel{member:foo}:
-//│             prefix = Ref{member:T} of member:T
-//│             nme = Ident of "foo"
-//│           rhs = Tup of Ls of 
-//│             Fld:
-//│               flags = ()
-//│               term = Lit of IntLit of 1
-//│               asc = N
+//│           TermDefinition:
+//│             k = ImmutVal
+//│             sym = member:a
+//│             tsym = trait:A2.a
+//│             params = Nil
+//│             tparams = N
+//│             sign = N
+//│             body = S of App:
+//│               lhs = Sel{member:foo}:
+//│                 prefix = SynthSel{trait:T}:
+//│                   prefix = Ref{trait:A2} of trait:A2
+//│                   nme = Ident of "T2"
+//│                 nme = Ident of "foo"
+//│               rhs = Tup of Ls of 
+//│                 Fld:
+//│                   flags = ()
+//│                   term = Lit of IntLit of 1
+//│                   asc = N
+//│             resSym = ‹result of member:a›
+//│             flags = ()
+//│             modulefulness = Modulefulness of N
+//│             annotations = Nil
+//│         res = Lit of UnitLit of false
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:158)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL16:1:104)
+//│     at REPL16:1:198
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 :todo // shouldn't error
 :rt
@@ -91,7 +119,7 @@ trait A3 with
 //│                 term = Lit of IntLit of 1
 //│                 asc = N
 //│           Require:
-//│             sym = member:T
+//│             sym = module:T
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = Lit of UnitLit of false
@@ -103,9 +131,9 @@ trait A3 with
 :rt
 trait A4 with
   trait T with
-    fun foo = id
-  T.foo(1)
+    fun goo = 2
   require T as T2
+  T2.foo(1)
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
@@ -128,39 +156,49 @@ trait A4 with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of trait:T
 //│                   k = Fun
-//│                   sym = member:foo
+//│                   sym = member:goo
+//│                   tsym = trait:T.goo
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N
-//│                   body = S of SynthSel{member:id}:
-//│                     prefix = Ref{member:Predef} of member:Predef
-//│                     nme = Ident of "id"
-//│                   resSym = ‹result of member:foo›
+//│                   body = S of Lit of IntLit of 2
+//│                   resSym = ‹result of member:goo›
 //│                   flags = ()
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│               res = Lit of UnitLit of false
 //│             annotations = Nil
-//│           App:
-//│             lhs = Sel{member:foo}:
-//│               prefix = SynthSel{trait:T}:
-//│                 prefix = Ref{trait:A4} of trait:A4
-//│                 nme = Ident of "T"
-//│               nme = Ident of "foo"
-//│             rhs = Tup of Ls of 
-//│               Fld:
-//│                 flags = ()
-//│                 term = Lit of IntLit of 1
-//│                 asc = N
 //│           Require:
-//│             sym = member:T2
+//│             sym = module:T2
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
-//│         res = Lit of UnitLit of false
+//│         res = App:
+//│           lhs = Sel{member:foo}:
+//│             prefix = SynthSel{trait:T}:
+//│               prefix = Ref{trait:A4} of trait:A4
+//│               nme = Ident of "T2"
+//│             nme = Ident of "foo"
+//│           rhs = Tup of Ls of 
+//│             Fld:
+//│               flags = ()
+//│               term = Lit of IntLit of 1
+//│               asc = N
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:158)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL22:1:319)
+//│     at REPL22:1:395
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 // but not this??
 :rt
@@ -191,9 +229,9 @@ trait A4 with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of trait:T
 //│                   k = Fun
 //│                   sym = member:foo
+//│                   tsym = trait:T.foo
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N
@@ -207,12 +245,14 @@ trait A4 with
 //│               res = Lit of UnitLit of false
 //│             annotations = Nil
 //│           Require:
-//│             sym = member:T2
+//│             sym = module:T2
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = App:
 //│           lhs = Sel{member:foo}:
-//│             prefix = Ref{member:T} of member:T
+//│             prefix = SynthSel{trait:T}:
+//│               prefix = Ref{trait:A4} of trait:A4
+//│               nme = Ident of "T"
 //│             nme = Ident of "foo"
 //│           rhs = Tup of Ls of 
 //│             Fld:
