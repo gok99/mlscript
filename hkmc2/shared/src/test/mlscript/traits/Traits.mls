@@ -8,6 +8,7 @@ trait Pred with
 Pred.foo(1)
 //│ = 2
 
+:todo // finish lowering
 :rt
 trait Lel with
   trait What with
@@ -40,7 +41,7 @@ trait Lel with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 Require:
-//│                   sym = member:Lel
+//│                   sym = module:Lel
 //│                   mod = trait:Lel
 //│                   path = S of Ref{member:Lel} of member:Lel
 //│                 TermDefinition:
@@ -83,12 +84,14 @@ trait Lel with
 //│               res = Lit of UnitLit of false
 //│             annotations = Nil
 //│           Require:
-//│             sym = member:Pred
+//│             sym = module:Pred
 //│             mod = trait:Pred
 //│             path = S of Ref{member:Pred} of member:Pred
 //│           App:
 //│             lhs = Sel{member:foo}:
-//│               prefix = Ref{member:Pred} of member:Pred
+//│               prefix = SynthSel{trait:Pred}:
+//│                 prefix = Ref{trait:Lel} of trait:Lel
+//│                 nme = Ident of "Pred"
 //│               nme = Ident of "foo"
 //│             rhs = Tup of Ls of 
 //│               Fld:
@@ -110,6 +113,19 @@ trait Lel with
 //│         res = Lit of UnitLit of false
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:154)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL14:1:383)
+//│     at REPL14:1:16
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 
 :sjs
@@ -166,7 +182,7 @@ trait Lol with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           Require:
-//│             sym = member:Lel
+//│             sym = module:Lel
 //│             mod = trait:Lel
 //│             path = S of Ref{member:Lel} of member:Lel
 //│           TermDefinition:

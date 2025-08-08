@@ -1,0 +1,101 @@
+:js
+
+
+trait A with
+  val a
+
+:rt  
+class B with
+  class C with
+    require A
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     Plain:
+//│       owner = N
+//│       kind = Cls
+//│       sym = class:B
+//│       bsym = member:B
+//│       tparams = Nil
+//│       ext = N
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           Plain:
+//│             owner = S of class:B
+//│             kind = Cls
+//│             sym = class:C
+//│             bsym = member:C
+//│             tparams = Nil
+//│             ext = N
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 Require:
+//│                   sym = module:A
+//│                   mod = trait:A
+//│                   path = S of Ref{member:A} of member:A
+//│               res = Lit of UnitLit of false
+//│             companion = N
+//│             trt = N
+//│             annotations = Nil
+//│         res = Lit of UnitLit of false
+//│       companion = N
+//│       trt = N
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: resolveRequires (TraitResolver.scala:119)
+//│ ╔══[ERROR] Concrete C does not implement all abstract members of trait A: a
+//│ ║  l.10: 	    require A
+//│ ╙──      	            ^
+
+
+:rt
+trait C with
+  trait L
+  trait R with
+    require L
+//│ Resolved tree:
+//│ Blk:
+//│   stats = Ls of 
+//│     TraitDef:
+//│       owner = N
+//│       sym = trait:C
+//│       bsym = member:C
+//│       tparams = Nil
+//│       paramsOpt = N
+//│       auxParams = Nil
+//│       body = ObjBody of Blk:
+//│         stats = Ls of 
+//│           TraitDef:
+//│             owner = S of trait:C
+//│             sym = trait:L
+//│             bsym = member:L
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             body = ObjBody of Blk:
+//│               stats = Nil
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│           TraitDef:
+//│             owner = S of trait:C
+//│             sym = trait:R
+//│             bsym = member:R
+//│             tparams = Nil
+//│             paramsOpt = N
+//│             auxParams = Nil
+//│             body = ObjBody of Blk:
+//│               stats = Ls of 
+//│                 Require:
+//│                   sym = module:L
+//│                   mod = trait:L
+//│                   path = S of SynthSel{trait:L}:
+//│                     prefix = Ref{trait:C} of trait:C
+//│                     nme = Ident of "L"
+//│               res = Lit of UnitLit of false
+//│             annotations = Nil
+//│         res = Lit of UnitLit of false
+//│       annotations = Nil
+//│   res = Lit of UnitLit of false
+
+

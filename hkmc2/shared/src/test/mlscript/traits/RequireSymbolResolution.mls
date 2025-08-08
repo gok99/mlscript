@@ -3,6 +3,7 @@
 
 trait T with
   fun foo = id
+  val a = 2
 
 // FIXME: both selections should look the same
 :rt
@@ -12,6 +13,7 @@ trait Lel with
   A.foo(1)
   require T
   T.foo(1)
+  T.a
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
@@ -63,20 +65,40 @@ trait Lel with
 //│                 term = Lit of IntLit of 1
 //│                 asc = N
 //│           Require:
-//│             sym = member:T
+//│             sym = module:T
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
-//│         res = App:
-//│           lhs = Sel{member:foo}:
-//│             prefix = Ref{member:T} of member:T
-//│             nme = Ident of "foo"
-//│           rhs = Tup of Ls of 
-//│             Fld:
-//│               flags = ()
-//│               term = Lit of IntLit of 1
-//│               asc = N
+//│           App:
+//│             lhs = Sel{member:foo}:
+//│               prefix = SynthSel{trait:T}:
+//│                 prefix = Ref{trait:Lel} of trait:Lel
+//│                 nme = Ident of "T"
+//│               nme = Ident of "foo"
+//│             rhs = Tup of Ls of 
+//│               Fld:
+//│                 flags = ()
+//│                 term = Lit of IntLit of 1
+//│                 asc = N
+//│         res = Sel{member:a}:
+//│           prefix = SynthSel{trait:T}:
+//│             prefix = Ref{trait:Lel} of trait:Lel
+//│             nme = Ident of "T"
+//│           nme = Ident of "a"
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:150)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL11:1:331)
+//│     at REPL11:1:16
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 
 // * Note: for the record:
@@ -121,17 +143,35 @@ module T
 // FIXME: bad error
 :e
 require T
-//│ ╔══[ERROR] Trait 'T' not found.
-//│ ║  l.123: 	require T
-//│ ╙──       	        ^
+//│ FAILURE: Unexpected exception
+//│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
+//│ 	at: scala.None$.get(Option.scala:627)
+//│ 	at: scala.None$.get(Option.scala:626)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1066)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1254)
+//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
+//│ 	at: hkmc2.semantics.Elaborator.topLevel(Elaborator.scala:1351)
+//│ 	at: hkmc2.MLsDiffMaker.processTrees(MLsDiffMaker.scala:246)
+//│ 	at: hkmc2.MLsDiffMaker.processOrigin(MLsDiffMaker.scala:227)
 
 // FIXME: bad error
 :e
 trait T2 with
   require T
-//│ ╔══[ERROR] Trait 'T' not found.
-//│ ║  l.131: 	  require T
-//│ ╙──       	          ^
+//│ FAILURE: Unexpected exception
+//│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
+//│ 	at: scala.None$.get(Option.scala:627)
+//│ 	at: scala.None$.get(Option.scala:626)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1066)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1254)
+//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1154)
+//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1147)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1152)
 
 
 

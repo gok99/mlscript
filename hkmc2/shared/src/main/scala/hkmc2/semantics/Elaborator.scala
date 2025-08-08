@@ -1058,6 +1058,7 @@ extends Importer:
             val trtSym = path match
               case Term.Ref(sym) => sym.asTrt
               case s @ Term.Sel(pre, nme) => s.symbol.flatMap(_.asTrt)
+              case s @ Term.SynthSel(pre, nme) => s.symbol.flatMap(_.asTrt)
               case _ => ???
             
             if k is Req then

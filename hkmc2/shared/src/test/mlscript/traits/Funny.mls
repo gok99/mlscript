@@ -47,12 +47,14 @@ trait A2 with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           Require:
-//│             sym = member:T
+//│             sym = module:T
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = App:
 //│           lhs = Sel{member:foo}:
-//│             prefix = Ref{member:T} of member:T
+//│             prefix = SynthSel{trait:T}:
+//│               prefix = Ref{trait:A2} of trait:A2
+//│               nme = Ident of "T"
 //│             nme = Ident of "foo"
 //│           rhs = Tup of Ls of 
 //│             Fld:
@@ -61,6 +63,19 @@ trait A2 with
 //│               asc = N
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected runtime error
+//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:150)
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
+//│     at <static_initializer> (REPL14:1:84)
+//│     at REPL14:1:15
+//│     at ContextifyScript.runInThisContext (node:vm:137:12)
+//│     at REPLServer.defaultEval (node:repl:593:22)
+//│     at bound (node:domain:433:15)
+//│     at REPLServer.runBound [as eval] (node:domain:444:12)
+//│     at REPLServer.onLine (node:repl:922:10)
+//│     at REPLServer.emit (node:events:518:28)
+//│     at REPLServer.emit (node:domain:489:12)
+//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 :todo // shouldn't error
 :rt
@@ -91,7 +106,7 @@ trait A3 with
 //│                 term = Lit of IntLit of 1
 //│                 asc = N
 //│           Require:
-//│             sym = member:T
+//│             sym = module:T
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = Lit of UnitLit of false
@@ -155,7 +170,7 @@ trait A4 with
 //│                 term = Lit of IntLit of 1
 //│                 asc = N
 //│           Require:
-//│             sym = member:T2
+//│             sym = module:T2
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = Lit of UnitLit of false
@@ -207,12 +222,14 @@ trait A4 with
 //│               res = Lit of UnitLit of false
 //│             annotations = Nil
 //│           Require:
-//│             sym = member:T2
+//│             sym = module:T2
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = App:
 //│           lhs = Sel{member:foo}:
-//│             prefix = Ref{member:T} of member:T
+//│             prefix = SynthSel{trait:T}:
+//│               prefix = Ref{trait:A4} of trait:A4
+//│               nme = Ident of "T"
 //│             nme = Ident of "foo"
 //│           rhs = Tup of Ls of 
 //│             Fld:

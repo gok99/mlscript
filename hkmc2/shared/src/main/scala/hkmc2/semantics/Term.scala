@@ -431,9 +431,11 @@ final case class HandlerTermDefinition(
   td: TermDefinition
 )
 
-final case class Require(sym: ModuleSymbol, mod: TraitSymbol, path: Opt[Term]) 
+final case class Require(sym: ModuleSymbol, mod: TraitSymbol, path: Opt[Term])
   extends CompanionValue:
   val annotations: Ls[Annot] = Nil
+  // RequiredTrait -> Map[(InheritingSymbol, AbstractTermDefinitions]]
+  var inheritedAbstract: Map[TraitSymbol, Map[Symbol, Ls[TermDefinition]]] = Map.empty
 
 case class ObjBody(blk: Term.Blk):
   
@@ -483,6 +485,7 @@ sealed abstract class ClassLikeDef extends TypeLikeDef:
   val ext: Opt[New]
   val body: ObjBody
   val annotations: Ls[Annot]
+  var abs: Opt[Map[TraitSymbol, Map[Symbol, Ls[TermDefinition]]]] = N
   def extraAnnotations: Ls[Annot] = annotations.filter:
     case Annot.Modifier(Keyword.`declare` | Keyword.`abstract` | Keyword.`data`) => false
     case _ => true

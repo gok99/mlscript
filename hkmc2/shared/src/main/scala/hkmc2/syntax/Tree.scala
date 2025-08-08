@@ -441,7 +441,7 @@ trait TypeDefImpl(using State) extends TypeOrTermDef:
       paramLists.headOption,
       rhs.getOrElse(die))
     case Trt => semantics.TraitSymbol(this, name.getOrElse(Ident("<error>")))
-    case Imp => semantics.ClassSymbol(this, name.getOrElse(Ident("<error>")))
+    case Imp => semantics.ClassSymbol(this, name.map[Ident](id => Ident(id.name + "$imp")).getOrElse(Ident("<error>")))
     case Req => semantics.ModuleSymbol(this, name.getOrElse(Ident("<error>")))
     case Mxn => ???
   

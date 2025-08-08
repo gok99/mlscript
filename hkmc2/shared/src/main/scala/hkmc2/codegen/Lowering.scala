@@ -876,7 +876,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
     val (imps, funs, rest) = splitBlock(main.stats, Nil, Nil, Nil)
     
     // Resolve trait obligations before lowering to eliminate runtime trait selection
-    // TraitResolver().resolve(funs ::: rest)
+    TraitResolver().resolve(funs ::: rest)
     
     val blk = block(funs ::: rest, R(main.res))(ImplctRet)(using Subst.empty)
     

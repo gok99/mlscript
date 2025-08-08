@@ -45,6 +45,7 @@ abstract class Symbol(using State) extends Located:
     case mem: BlockMemberSymbol => mem.trtTree.flatMap(_.symbol.asTrt) // where is this used?
     case _ => N
   def asClsOrMod: Opt[ClassSymbol | ModuleSymbol] = asCls orElse asModOrObj
+  def asClsOrModOrTrt: Opt[ClassSymbol | ModuleSymbol | TraitSymbol] = asClsOrMod orElse asTrt
   /* 
   def asTrm: Opt[TermSymbol] = this match
     case trm: TermSymbol => S(trm)
