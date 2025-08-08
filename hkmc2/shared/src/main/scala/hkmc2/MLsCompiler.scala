@@ -9,7 +9,7 @@ import hkmc2.semantics.MemberSymbol
 import hkmc2.semantics.Elaborator
 import hkmc2.semantics.Resolver
 import hkmc2.syntax.Keyword.`override`
-import semantics.Elaborator.State
+import semantics.Elaborator.{Ctx, State}
 import hkmc2.codegen.TraitResolver
 
 
