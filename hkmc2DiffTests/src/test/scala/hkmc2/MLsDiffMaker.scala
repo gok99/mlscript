@@ -122,7 +122,6 @@ abstract class MLsDiffMaker extends DiffMaker:
   
   var curCtx = Elaborator.State.init
   var curICtx = Resolver.ICtx.empty
-  var curTCtx = TraitResolver.TCtx.empty
   
   var prelude = Elaborator.Ctx.empty
   

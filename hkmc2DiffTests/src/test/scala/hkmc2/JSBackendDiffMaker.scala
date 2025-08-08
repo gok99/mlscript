@@ -72,13 +72,11 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
           outerRaise(d)
         case d => outerRaise(d)
       given Elaborator.Ctx = curCtx
-      given TraitResolver.TCtx = curTCtx
       val low = ltl.givenIn:
           codegen.Lowering()
       val jsb = ltl.givenIn:
         new JSBuilder
-      val (le, tctx) = low.program(blk)
-      curTCtx = tctx
+      val le = low.program(blk)
       val nestedScp = baseScp.nest
       val je = nestedScp.givenIn:
         jsb.program(le, N, wd)
@@ -87,7 +85,6 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
       output(jsStr)
     if js.isSet then
       given Elaborator.Ctx = curCtx
-      given TraitResolver.TCtx = curTCtx
       given Raise =
         case e: ErrorReport if reportedMessages.contains(e.mainMsg) =>
           if verbose.isSet then
@@ -101,8 +98,7 @@ abstract class JSBackendDiffMaker extends MLsDiffMaker:
           new JSBuilder
             with JSBuilderArgNumSanityChecks
       val resSym = new TempSymbol(S(blk), "block$res")
-      val (lowered0, tctx) = low.program(blk)
-      curTCtx = tctx
+      val lowered0 = low.program(blk)
       val le = lowered0.copy(main = lowered0.main.mapTail:
         case e: End =>
           Assign(resSym, Value.Lit(syntax.Tree.UnitLit(false)), e)

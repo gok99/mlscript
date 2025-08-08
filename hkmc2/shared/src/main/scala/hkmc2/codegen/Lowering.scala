@@ -54,7 +54,7 @@ end Subst
 import Subst.subst
 
 
-class Lowering()(using Config, TL, Raise, State, Ctx, TraitResolver.TCtx):
+class Lowering()(using Config, TL, Raise, State, Ctx):
   
   val lowerHandlers: Bool = config.effectHandlers.isDefined
   val lift: Bool = config.liftDefns.isDefined
@@ -871,13 +871,12 @@ class Lowering()(using Config, TL, Raise, State, Ctx, TraitResolver.TCtx):
         Assign(l, r, k(l |> Value.Ref.apply))
   
   
-  def program(main: st.Blk): (Program, TraitResolver.TCtx) =
+  def program(main: st.Blk): Program =
     
     val (imps, funs, rest) = splitBlock(main.stats, Nil, Nil, Nil)
     
     // Resolve trait obligations before lowering to eliminate runtime trait selection
-    // val trtResolver = TraitResolver()
-    // val tctx = trtResolver.resolveAndCheck(funs ::: rest)
+    // TraitResolver().resolve(funs ::: rest)
     
     val blk = block(funs ::: rest, R(main.res))(ImplctRet)(using Subst.empty)
     
@@ -898,10 +897,10 @@ class Lowering()(using Config, TL, Raise, State, Ctx, TraitResolver.TCtx):
     
     val res = MergeMatchArmTransformer.applyBlock(lifted)
     
-    (Program(
+    Program(
       imps.map(imp => imp.sym -> imp.file),
       res
-    ), summon[TraitResolver.TCtx])
+    )
   
   
   def setupSelection(prefix: Term, nme: Tree.Ident, sym: Opt[FieldSymbol])(k: Result => Block)(using Subst): Block =
