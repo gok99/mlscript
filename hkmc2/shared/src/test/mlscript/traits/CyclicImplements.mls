@@ -1,0 +1,30 @@
+:js
+
+// Should we support?
+
+trait Foo with
+  val foo: Int
+  fun loo: Int
+  fun boo() = foo * 10
+  val too = loo
+
+trait Bar with
+  require Foo
+  fun bar() = Foo.boo()
+
+trait Bar2 with
+  require Foo
+  fun bar() = Foo.boo() + 1
+
+trait Baz with
+  require Bar
+  require Bar2
+  implement Bar.Foo with
+    val foo = 1
+    fun loo = Bar2.Foo.loo
+  implement Bar2.Foo with
+    val foo = Bar.Foo.foo
+    fun loo = 3
+  fun tootoo() = Bar.Foo.too() + Bar2.Foo.too()
+
+

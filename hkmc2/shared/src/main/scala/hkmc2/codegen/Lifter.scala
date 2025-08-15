@@ -262,7 +262,6 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
       S(PlainParamList(sortedVars.iterator.map(_._2).toList)),
       Nil, None, Nil, Nil, 
       sortedVars.iterator.map(_._3.sym).toList,
-      L(Nil),
       End(),
       sortedVars.iterator.foldLeft[Block](End()):
         case (acc, (_, _, vd)) => Define(vd, acc)
@@ -421,7 +420,7 @@ class Lifter(handlerPaths: Opt[HandlerPaths])(using State, Raise):
           sym.traverse
           applyPath(rhs)
         case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentPath, methods,
-            privateFields, publicFields, virtual, preCtor, ctor) =>
+            privateFields, publicFields, preCtor, ctor) =>
           own.foreach(_.traverse)
           isym.traverse
           sym.traverse

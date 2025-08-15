@@ -38,7 +38,7 @@ sealed abstract class Block extends Product with AutoLocated:
     case AssignDynField(lhs, fld, arrayIdx, rhs, rest) => lhs :: fld :: rhs :: rest :: Nil
     case Define(FunDefn(owner, sym, params, body), rest) => sym :: (params :+ body :+ rest)
     case Define(ValDefn(owner, k, sym, rhs), rest) => sym :: rhs :: rest :: Nil
-    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, methods, privFlds, pubFlds, virtual, preCtor, ctor), rest) =>
+    case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, methods, privFlds, pubFlds, preCtor, ctor), rest) =>
       isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++ privFlds ++ pubFlds
       ++ preCtor.subBlocks ++ ctor.subBlocks :+ rest
     case HandleBlock(lhs, res, par, args, cls, handlers, body, rest) =>
@@ -244,6 +244,11 @@ sealed abstract class Block extends Product with AutoLocated:
           if (newPreCtor is c.preCtor) && (newCtor is c.ctor)
           then c
           else c.copy(preCtor = newPreCtor, ctor = newCtor)
+        case c: TraitDefn =>
+          val newCtor = c.ctor.flattened
+          if (newCtor is c.ctor)
+          then c
+          else c.copy(ctor = newCtor)
       
       val newRest = rest.flatten(k)
       if (newDefn is defn) && (newRest is rest)
@@ -322,6 +327,8 @@ sealed abstract class Defn:
     case _: ValDefn => Nil
     case ClsLikeDefn(preCtor = preCtor, ctor = ctor, methods = mtds) =>
       preCtor :: ctor :: mtds.flatMap(_.subBlocks)
+    case TraitDefn(ctor = ctor, methods = mtds) =>
+      ctor :: mtds.flatMap(_.subBlocks)
   
   // * Note that `privateFields` abd `publicFields` can't possibly be free since they are never
   // * referred to directly (they are only accessed through selections).
@@ -331,7 +338,7 @@ sealed abstract class Defn:
     case FunDefn(own, sym, params, body) => body.freeVars -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVars
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
-        methods, privateFields, publicFields, virtual, preCtor, ctor) =>
+        methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVars
         ++ ctor.freeVars ++ methods.flatMap(_.freeVars)
         -- auxParams.flatMap(_.paramSyms)
@@ -340,7 +347,7 @@ sealed abstract class Defn:
     case FunDefn(own, sym, params, body) => body.freeVarsLLIR -- params.flatMap(_.paramSyms) - sym
     case ValDefn(owner, k, sym, rhs) => rhs.freeVarsLLIR
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
-        methods, privateFields, publicFields, virtual, preCtor, ctor) =>
+        methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVarsLLIR
         ++ ctor.freeVarsLLIR ++ methods.flatMap(_.freeVarsLLIR)
         -- auxParams.flatMap(_.paramSyms)
@@ -372,11 +379,22 @@ final case class ClsLikeDefn(
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
     publicFields: Ls[BlockMemberSymbol],
-    // Either:
-    // 1) a list of virtual members of the class, and their corresponding traits
-    // 2) the trait that the `implement` "block" implements
-    virtual: Either[Ls[(BlockMemberSymbol, TraitSymbol)], TraitSymbol],
     preCtor: Block,
+    ctor: Block,
+) extends Defn:
+  val innerSym = S(isym)
+
+final case class TraitDefn(
+    owner: Opt[InnerSymbol],
+    isym: MemberSymbol[? <: TraitDef] & InnerSymbol,
+    sym: BlockMemberSymbol,
+    paramsOpt: Opt[ParamList],
+    auxParams: List[ParamList],
+    parentPath: Opt[Path],
+    methods: Ls[FunDefn],
+    privateFields: Ls[TermSymbol],
+    publicFields: Ls[BlockMemberSymbol],
+    requires: Ls[TraitSymbol],
     ctor: Block,
 ) extends Defn:
   val innerSym = S(isym)

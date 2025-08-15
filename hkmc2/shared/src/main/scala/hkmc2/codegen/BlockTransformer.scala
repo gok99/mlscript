@@ -159,7 +159,7 @@ class BlockTransformer(subst: SymbolSubst):
     case defn: FunDefn => applyFunDefn(defn)
     case defn: ValDefn => applyValDefn(defn)
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentPath, methods, 
-      privateFields, publicFields, virtual, preCtor, ctor) =>
+      privateFields, publicFields, preCtor, ctor) =>
       val own2 = own.mapConserve(_.subst)
       val isym2 = isym.subst
       val sym2 = sym.subst
@@ -180,8 +180,28 @@ class BlockTransformer(subst: SymbolSubst):
           (publicFields2 is publicFields) &&
           (preCtor2 is preCtor) && (ctor2 is ctor)
         then defn else ClsLikeDefn(own2, isym2, sym2, k, paramsOpt2, 
-          auxParams2, parentPath2, methods2, privateFields2, publicFields2, virtual, preCtor2, ctor2)
-  
+          auxParams2, parentPath2, methods2, privateFields2, publicFields2, preCtor2, ctor2)
+    case TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods,
+      privateFields, publicFields, requires, ctor) =>
+      val owner2 = owner.mapConserve(_.subst)
+      val isym2 = isym.subst
+      val sym2 = sym.subst
+      val paramsOpt2 = paramsOpt.mapConserve(applyParamList)
+      val auxParams2 = auxParams.mapConserve(applyParamList)
+      val parentPath2 = parentPath.mapConserve(applyPath)
+      val methods2 = methods.mapConserve(applyFunDefn)
+      val privateFields2 = privateFields.mapConserve(_.subst)
+      val publicFields2 = publicFields.mapConserve(_.subst)
+      if (owner2 is owner) && (isym2 is isym) && (sym2 is sym) &&
+          (paramsOpt2 is paramsOpt) &&
+          (auxParams2 is auxParams) &&
+          (parentPath2 is parentPath) &&
+          (methods2 is methods) &&
+          (privateFields2 is privateFields) &&
+          (publicFields2 is publicFields)
+        then defn else TraitDefn(owner2, isym2, sym2, paramsOpt2, auxParams2, 
+          parentPath2, methods2, privateFields2, publicFields2, requires, ctor)
+
   def applyArg(arg: Arg): Arg =
     val val2 = applyPath(arg.value)
     if val2 is arg.value then arg else Arg(arg.spread, val2)
@@ -222,7 +242,7 @@ class BlockTransformerShallow(subst: SymbolSubst) extends BlockTransformer(subst
   override def applyLam(lam: Value.Lam) = lam
   override def applyFunDefn(fun: FunDefn): FunDefn = fun
   override def applyDefn(defn: Defn): Defn = defn match
-    case _: FunDefn | _: ClsLikeDefn => defn
+    case _: FunDefn | _: ClsLikeDefn | _: TraitDefn => defn
     case _: ValDefn => super.applyDefn(defn)
   
   override def applyHandler(hdr: Handler): Handler = hdr

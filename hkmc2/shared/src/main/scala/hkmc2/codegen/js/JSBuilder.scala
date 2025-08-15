@@ -218,7 +218,7 @@ class JSBuilder(using TL, State, Ctx) extends CodeBuilder:
             else
               // in JS, let name = (0, function (args) => {} ) prevents function's name from being bound to `name`
               doc"${getVar(sym)} = (undefined, function ($params) ${ braced(bodyDoc) });"
-          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, mtds, privFlds, _pubFlds, virtual, preCtor, ctor) =>
+          case ClsLikeDefn(ownr, isym, sym, kind, paramsOpt, auxParams, par, mtds, privFlds, _pubFlds, preCtor, ctor) =>
             // * Note: `_pubFlds` is not used because in JS, fields are not declared
             val clsParams = paramsOpt.fold(Nil)(_.paramSyms)
             val ctorParams = clsParams.map(p => p -> scope.allocateName(p))
