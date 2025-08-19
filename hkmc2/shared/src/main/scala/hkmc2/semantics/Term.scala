@@ -434,7 +434,7 @@ final case class HandlerTermDefinition(
 final case class Require(sym: ModuleSymbol, mod: TraitSymbol, path: Opt[Term])
   extends CompanionValue:
   val annotations: Ls[Annot] = Nil
-  var inheritedAbstract: Map[Ls[FieldSymbol], Ls[TermDefinition]] = Map.empty
+  var finalImpl: Opt[TraitSymbol] = N
 
 case class ObjBody(blk: Term.Blk):
   
@@ -484,7 +484,7 @@ sealed abstract class ClassLikeDef extends TypeLikeDef:
   val ext: Opt[New]
   val body: ObjBody
   val annotations: Ls[Annot]
-  var abs: Opt[Map[Ls[FieldSymbol], Ls[TermDefinition]]] = N
+  var abs: Opt[Map[Ls[FieldSymbol], (TraitDef, Opt[Require], Ls[TermDefinition])]] = N
   def extraAnnotations: Ls[Annot] = annotations.filter:
     case Annot.Modifier(Keyword.`declare` | Keyword.`abstract` | Keyword.`data`) => false
     case _ => true
@@ -518,18 +518,21 @@ case class PatternDef(
   val ext: Opt[New] = N
 
 case class TraitDef(
-    owner: Opt[InnerSymbol],
     sym: TraitSymbol,
     bsym: BlockMemberSymbol,
     tparams: Ls[TyParam],
     paramsOpt: Opt[ParamList],
     auxParams: Ls[ParamList],
     body: ObjBody,
+    kind: ClsLikeKind,
     annotations: Ls[Annot],
+    trt: Resolvable,
 ) extends ClassLikeDef:
   self =>
-  val kind: ClsLikeKind = Trt
+  var parent: Opt[TraitSymbol] = N
+  var hasChild: Bool = false
   val ext: Opt[New] = N
+  val owner: Opt[InnerSymbol] = N
 
 sealed abstract class ClassDef extends ClassLikeDef:
   val kind: ClsLikeKind
@@ -556,7 +559,6 @@ object ClassDef:
       params: Ls[ParamList],
       ext: Opt[New],
       body: ObjBody,
-      trt: Opt[Resolvable],
       annotations: Ls[Annot],
   ): ClassDef =
     params match
@@ -565,7 +567,7 @@ object ClassDef:
         , tparams, ps, pss, ext, body, N, annotations)
       case Nil => Plain(owner, kind, sym.asInstanceOf// TODO: improve
         , bsym
-        , tparams, ext, body, N, trt, annotations)
+        , tparams, ext, body, N, annotations)
   
   def unapply(cls: ClassDef): Opt[(ClassSymbol, Ls[TyParam], Opt[ParamList], ObjBody)] =
     S((cls.sym, cls.tparams, cls.paramsOpt, cls.body))
@@ -592,12 +594,10 @@ object ClassDef:
       tparams: Ls[TyParam],
       ext: Opt[New],
       body: ObjBody, companion: Opt[CompanionValue],
-      trt: Opt[Resolvable],
       annotations: Ls[Annot]
   ) extends ClassDef:
     val paramsOpt: Opt[ParamList] = N
     val auxParams: List[ParamList] = Nil
-    var implementingTraits: Ls[Ls[FieldSymbol]] = Nil
 end ClassDef
 
 

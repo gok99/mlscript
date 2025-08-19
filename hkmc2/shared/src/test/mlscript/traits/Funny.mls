@@ -10,7 +10,6 @@ trait A1 with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:A1
 //│       bsym = member:A1
 //│       tparams = Nil
@@ -27,7 +26,9 @@ trait A1 with
 //│               flags = ()
 //│               term = Lit of IntLit of 1
 //│               asc = N
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:A1} of trait:A1
 //│   res = Lit of UnitLit of false
 
 :rt
@@ -38,7 +39,6 @@ trait A2 with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:A2
 //│       bsym = member:A2
 //│       tparams = Nil
@@ -61,21 +61,10 @@ trait A2 with
 //│               flags = ()
 //│               term = Lit of IntLit of 1
 //│               asc = N
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:A2} of trait:A2
 //│   res = Lit of UnitLit of false
-//│ FAILURE: Unexpected runtime error
-//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:150)
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
-//│     at <static_initializer> (REPL14:1:84)
-//│     at REPL14:1:15
-//│     at ContextifyScript.runInThisContext (node:vm:137:12)
-//│     at REPLServer.defaultEval (node:repl:593:22)
-//│     at bound (node:domain:433:15)
-//│     at REPLServer.runBound [as eval] (node:domain:444:12)
-//│     at REPLServer.onLine (node:repl:922:10)
-//│     at REPLServer.emit (node:events:518:28)
-//│     at REPLServer.emit (node:domain:489:12)
-//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 :todo // shouldn't error
 :rt
@@ -86,7 +75,6 @@ trait A3 with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:A3
 //│       bsym = member:A3
 //│       tparams = Nil
@@ -110,9 +98,10 @@ trait A3 with
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = Lit of UnitLit of false
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:A3} of trait:A3
 //│   res = Lit of UnitLit of false
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
 
 // this does the right thing
 :rt
@@ -125,7 +114,6 @@ trait A4 with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:A4
 //│       bsym = member:A4
 //│       tparams = Nil
@@ -134,7 +122,6 @@ trait A4 with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           TraitDef:
-//│             owner = S of trait:A4
 //│             sym = trait:T
 //│             bsym = member:T
 //│             tparams = Nil
@@ -157,7 +144,9 @@ trait A4 with
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│               res = Lit of UnitLit of false
+//│             kind = Trt
 //│             annotations = Nil
+//│             trt = Ref{trait:T} of trait:T
 //│           App:
 //│             lhs = Sel{member:foo}:
 //│               prefix = SynthSel{trait:T}:
@@ -174,7 +163,9 @@ trait A4 with
 //│             mod = trait:T
 //│             path = S of Ref{member:T} of member:T
 //│         res = Lit of UnitLit of false
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:A4} of trait:A4
 //│   res = Lit of UnitLit of false
 
 // but not this??
@@ -188,7 +179,6 @@ trait A4 with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:A4
 //│       bsym = member:A4
 //│       tparams = Nil
@@ -197,7 +187,6 @@ trait A4 with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           TraitDef:
-//│             owner = S of trait:A4
 //│             sym = trait:T
 //│             bsym = member:T
 //│             tparams = Nil
@@ -220,7 +209,9 @@ trait A4 with
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│               res = Lit of UnitLit of false
+//│             kind = Trt
 //│             annotations = Nil
+//│             trt = Ref{trait:T} of trait:T
 //│           Require:
 //│             sym = module:T2
 //│             mod = trait:T
@@ -236,7 +227,9 @@ trait A4 with
 //│               flags = ()
 //│               term = Lit of IntLit of 1
 //│               asc = N
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:A4} of trait:A4
 //│   res = Lit of UnitLit of false
 
 

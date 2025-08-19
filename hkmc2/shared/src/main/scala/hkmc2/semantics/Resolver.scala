@@ -449,8 +449,7 @@ class Resolver(tl: TraceLogger)
       log(s"Resolving ${defn.kind.desc} definition $defn")
       defn match
         // fully resolve `implement` blocks
-        case plain: ClassDef.Plain =>
-          defn.asInstanceOf[ClassDef.Plain].trt.foreach(traverse(_, expect = Any))
+        case implTrait: TraitDef => traverse(implTrait.trt, expect = Any)
         case _ =>
       traverseClassLikeDef(defn)
       ictx

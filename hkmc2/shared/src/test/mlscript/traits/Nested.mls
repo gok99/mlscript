@@ -35,15 +35,13 @@ class B with
 //│                   path = S of Ref{member:A} of member:A
 //│               res = Lit of UnitLit of false
 //│             companion = N
-//│             trt = N
 //│             annotations = Nil
 //│         res = Lit of UnitLit of false
 //│       companion = N
-//│       trt = N
 //│       annotations = Nil
 //│   res = Lit of UnitLit of false
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: resolveRequires (TraitResolver.scala:119)
+//│ FAILURE LOCATION: resolveRequires (TraitResolver.scala:102)
 //│ ╔══[ERROR] Concrete C does not implement all abstract members of trait A: a
 //│ ║  l.10: 	    require A
 //│ ╙──      	            ^
@@ -54,48 +52,17 @@ trait C with
   trait L
   trait R with
     require L
-//│ Resolved tree:
-//│ Blk:
-//│   stats = Ls of 
-//│     TraitDef:
-//│       owner = N
-//│       sym = trait:C
-//│       bsym = member:C
-//│       tparams = Nil
-//│       paramsOpt = N
-//│       auxParams = Nil
-//│       body = ObjBody of Blk:
-//│         stats = Ls of 
-//│           TraitDef:
-//│             owner = S of trait:C
-//│             sym = trait:L
-//│             bsym = member:L
-//│             tparams = Nil
-//│             paramsOpt = N
-//│             auxParams = Nil
-//│             body = ObjBody of Blk:
-//│               stats = Nil
-//│               res = Lit of UnitLit of false
-//│             annotations = Nil
-//│           TraitDef:
-//│             owner = S of trait:C
-//│             sym = trait:R
-//│             bsym = member:R
-//│             tparams = Nil
-//│             paramsOpt = N
-//│             auxParams = Nil
-//│             body = ObjBody of Blk:
-//│               stats = Ls of 
-//│                 Require:
-//│                   sym = module:L
-//│                   mod = trait:L
-//│                   path = S of SynthSel{trait:L}:
-//│                     prefix = Ref{trait:C} of trait:C
-//│                     nme = Ident of "L"
-//│               res = Lit of UnitLit of false
-//│             annotations = Nil
-//│         res = Lit of UnitLit of false
-//│       annotations = Nil
-//│   res = Lit of UnitLit of false
+//│ FAILURE: Unexpected exception
+//│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
+//│ 	at: scala.None$.get(Option.scala:627)
+//│ 	at: scala.None$.get(Option.scala:626)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1057)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1256)
+//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1256)
+//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1145)
+//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1138)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1143)
 
 

@@ -18,6 +18,7 @@ import semantics.Elaborator.{State, Ctx, ctx}
 
 import syntax.{Literal, Tree}
 import hkmc2.syntax.Fun
+import hkmc2.syntax.Tree.Ident
 
 
 abstract class TailOp extends (Result => Block)
@@ -181,77 +182,72 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
       case cls: ClassLikeDef if cls.sym.defn.exists(_.isDeclare.isDefined) =>
         // * Declarations have no lowering
         blockImpl(stats, res)(k)
-      case impl @ ClassDef.Plain(owner, _, sym, bsym, tparams,
-        ext, body, companion, trt, annotations) if trt.nonEmpty =>
-          val (mtds, _, _, ctor) = gatherMembers(body)
-          // TODO: check if sels can be used as keys directly
-          def lsToPath(syms: Ls[FieldSymbol], acc: Term): Term = syms match
-            case Nil => acc
-            case sym :: syms => lsToPath(syms, Sel(acc, Tree.Ident(sym.nme))(S(sym)).noIArgs)
-          val paths = impl.implementingTraits.map:
-            case syms => (syms, lsToPath(syms.tail, Ref(syms.head)(Tree.Ident(impl.sym.nme), 666, N).noIArgs))
-          
-          def defnGetVal(defn: Defn) = 
-            println(defn)
-            defn match
-            case ValDefn(_, knd, sym, bod) => bod match
-              case v: Value => v
-              case _ => ???
-            case FunDefn(_, sym, paramLists, body) =>
-              Value.Lam(paramLists.head, body)
-            case _ => ???
-
-          val appendedCtor = mtds.foldRight(ctor)((fdef, acc) => Define(fdef, acc))
-          
-          def defnTransform(blk: Block): Block = blk match
-            case Define(defn, rest) =>
-              def impl(ts: Ls[(Ls[FieldSymbol], st)]): Block =
-                ts match
-                  case Nil => defnTransform(rest)
-                  case (syms, t) :: ts => subTerm(t): p =>
-                    val others = impl(ts)
-                    // Define(defnChangeOwner(defn),)
-                    AssignField(p,
-                      Tree.Ident(defn.sym.nme),
-                      defnGetVal(defn),
-                      others)(S(syms.last))
-              impl(paths)
-            case _ => block(stats, res)(k)
-          defnTransform(appendedCtor)
-
       case trt: TraitDef => 
-        val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(trt.body)
-        val requires = trt.body.blk.stats.collect:
-          case r: Require => r.mod
-        Define(
-          TraitDefn(
-            trt.owner, trt.sym, trt.bsym, trt.paramsOpt, trt.auxParams,
-            N, mtds, privateFlds, publicFlds, requires, ctor
-          ),
-          block(stats, res)(k)
-        )
-      case cls: ClassLikeDef =>
-        reportAnnotations(cls, cls.extraAnnotations)
-        val (impls, others) = cls.body match
+        val (impls, others) = trt.body match
           case ObjBody(Term.Blk(stats, res)) =>
             val (impls, others) = stats.partition:
-              case impl : ClassDef.Plain if impl.trt.nonEmpty => true
+              case impl : TraitDef => true
               case _ => false
             (impls, ObjBody(Term.Blk(others, res)))
 
-        val pctor = blockImpl(impls, R(Lit(Tree.UnitLit(false))))(r => End())
-
         val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(others)
+        val requires = trt.body.blk.stats.collect:
+          case r: Require => r
+        Define(
+          TraitDefn(
+            N, trt.sym, trt.bsym, trt.paramsOpt, trt.auxParams,
+            N, mtds, privateFlds, publicFlds, requires, trt.hasChild, ctor
+          ),
+          block(impls ::: stats, res)(k)
+        )
+      case cls: ClassLikeDef =>
+        reportAnnotations(cls, cls.extraAnnotations)
+        val (impls, requires, others) = cls.body match
+          case ObjBody(Term.Blk(stats, res)) =>
+            val (impls, pre) = stats.partition:
+              case impl : TraitDef => true
+              case _ => false
+            val (requires, others) = pre.partitionMap:
+              case r: Require => Left(r)
+              case o => Right(o) 
+            (impls, requires, ObjBody(Term.Blk(others, res)))
+
+        def parentChain(trt: TraitSymbol): Term.Tup => Term.Tup =
+          val defn = trt.defn.getOrElse:
+            wat(s"Trait ${trt.nme} has no definition", trt)
+          defn.parent
+            .map(trt => (trm: Term) =>
+              val thingy = Term.App(defn.bsym.ref().noIArgs, trm)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).noIArgs
+              parentChain(trt)(Term.Tup(Ls(PlainFld(thingy)))(Tree.DummyTup)))
+            .getOrElse(t => t)
+        
+        def buildTrait(r: Require): Term =
+          val trt = r.mod
+          val defn = trt.defn.getOrElse:
+            wat(s"Trait ${trt.nme} has no definition", trt) 
+          val requires = defn.body.blk.stats.collect:
+            case r: Require => r
+          val parent = r.finalImpl.map(parentChain(_)(Term.Tup(Nil)(Tree.DummyTup))).map(_.fields)
+          val childTraits = Term.Tup(parent.toList.flatMap(identity) ::: requires.map(r => buildTrait(r)).map(PlainFld(_)))(Tree.DummyTup)
+          Term.App(defn.bsym.ref().noIArgs, childTraits)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).noIArgs
+
+        def withTraitAssigns(rest: Block) = requires.foldRight(rest): (r, rest) =>
+          term(buildTrait(r)): res => 
+            subTerm(cls.sym.ref().noIArgs): p =>
+              AssignField(p, r.sym.id, res, rest)(N)
+
+        val (mtds, publicFlds, privateFlds, ctorPre) = gatherMembers(others)
+        val ctor = withTraitAssigns(ctorPre)
         cls.ext match
         case N =>
           Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
                 mtds,
                 privateFlds,
                 publicFlds,
-                pctor,
+                End(),
                 ctor
               ),
-            blockImpl(stats, res)(k))
+            blockImpl(impls ::: stats, res)(k))
         case S(ext) =>
           assert(k isnt syntax.Mod) // modules can't extend things and can't have super calls
           subTerm(ext.cls): clsp =>
@@ -263,7 +259,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
               ),
               blockImpl(stats, res)(k)
             )
-      case td: (TypeDef | Require) => // * Type definitions are erased
+      case td: (TypeDef | Require) => // * Type definitions and requires are erased
         blockImpl(stats, res)(k)
   
   
@@ -1134,35 +1130,46 @@ object MergeMatchArmTransformer extends BlockTransformer(new SymbolSubst()):
 
 class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State, Ctx) extends BlockTransformer(subs):
   override def applyDefn(defn: Defn): Defn = defn match
-    case _: FunDefn | _: ClsLikeDefn => defn
-    case _: ValDefn => super.applyDefn(defn)
-    case TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods, 
-      privFlds, pubFlds, requires, ctor) =>
+    case _: FunDefn | _: ClsLikeDefn | _: ValDefn => super.applyDefn(defn)
+    case td @ TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods, 
+      privFlds, pubFlds, requires, hasChild, ctor) =>
       val clsSym = BlockMemberSymbol(sym.nme, Nil, true)
       
       val params = requires.map:
-        case trtSym: TraitSymbol => 
-          val varSym = VarSymbol(trtSym.id)
+        case r: Require => 
+          val varSym = VarSymbol(r.sym.id)
           (varSym, Param(FldFlags.empty, varSym, N, Modulefulness.none))
-
-      val lower = new Lowering()
+      
+      given Subst = Subst.empty
+      val low = Lowering()
 
       def withAssigns(vars: Ls[VarSymbol]): Block = vars match
         case Nil => ctor
         case v :: vs => 
-          val ref = Ref(isym)(Tree.Ident(clsSym.nme), 666, N).noIArgs
-          // val sel = Term.Sel(ref, Tree.Ident(v.nme))(N).noIArgs
-          Subst.empty.givenIn:
-            lower.subTerm(ref, false): p =>
-              AssignField(
-                p,
-                Tree.Ident(v.nme),
-                Value.Ref(v),
-                withAssigns(vs))(N)
-          
-      val cls = ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, parentPath, methods, 
-        privFlds, pubFlds, withAssigns(params.map(_._1)), End())
+          val ref = Ref(clsSym)(Tree.Ident(clsSym.nme), 666, N).noIArgs
+          low.subTerm(ref, false): p =>
+            AssignField(
+              p,
+              Tree.Ident(v.nme),
+              Value.Ref(v),
+              withAssigns(vs))(N)
 
-      FunDefn(owner, sym, ParamList(ParamListFlags.empty, params.map(_._2), N) :: Nil,
+      val newCtor = withAssigns(params.map(_._1))
+
+      val implParam = (if hasChild then S(hasChild) else N).map: _ =>
+        val varSym = VarSymbol(Ident("Impl"))
+        // what's the right way to do this?
+        val clsWithPathDef = (low.subTerm(varSym.ref().noIArgs): path => 
+          Define(ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, S(path), methods, 
+            privFlds, pubFlds, End(), newCtor), End())) 
+        val clsWithPath = clsWithPathDef match
+          case Define(defn, _) => defn
+        (Param(FldFlags.empty, varSym, N, Modulefulness.none), clsWithPath)
+          
+      val cls = implParam.map(_._2).getOrElse:
+        ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, N, methods, 
+            privFlds, pubFlds, End(), newCtor)
+
+      FunDefn(owner, sym, ParamList(ParamListFlags.empty, implParam.map(_._1).toList ::: params.map(_._2), N) :: Nil,
         Define(cls, Return(Value.Ref(cls.sym), false)))
 

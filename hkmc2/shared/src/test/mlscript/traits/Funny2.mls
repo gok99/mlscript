@@ -1,6 +1,5 @@
 :js
 
-
 trait A with
   val a = 1
 
@@ -13,118 +12,43 @@ trait C with
 trait D with
   require C as C2
 
-:rt
-:e
+:sjs
 trait Trt with
   require D as D2
-  val t = D2.C2.B.A.b
-//│ ╔══[ERROR] Trait 'A' does not contain member 'b'
-//│ ║  l.20: 	  val t = D2.C2.B.A.b
-//│ ╙──      	          ^^^^^^^^^^^
-//│ Resolved tree:
-//│ Blk:
-//│   stats = Ls of 
-//│     TraitDef:
-//│       owner = N
-//│       sym = trait:Trt
-//│       bsym = member:Trt
-//│       tparams = Nil
-//│       paramsOpt = N
-//│       auxParams = Nil
-//│       body = ObjBody of Blk:
-//│         stats = Ls of 
-//│           Require:
-//│             sym = module:D2
-//│             mod = trait:D
-//│             path = S of Ref{member:D} of member:D
-//│           TermDefinition:
-//│             owner = S of trait:Trt
-//│             k = ImmutVal
-//│             sym = member:t
-//│             params = Nil
-//│             tparams = N
-//│             sign = N
-//│             body = S of Sel:
-//│               prefix = Sel{trait:A}:
-//│                 prefix = Sel{trait:B}:
-//│                   prefix = Sel{trait:C}:
-//│                     prefix = SynthSel{trait:D}:
-//│                       prefix = Ref{trait:Trt} of trait:Trt
-//│                       nme = Ident of "D2"
-//│                     nme = Ident of "C2"
-//│                   nme = Ident of "B"
-//│                 nme = Ident of "A"
-//│               nme = Ident of "b"
-//│             resSym = ‹result of member:t›
-//│             flags = ()
-//│             modulefulness = Modulefulness of N
-//│             annotations = Nil
-//│         res = Lit of UnitLit of false
-//│       annotations = Nil
-//│   res = Lit of UnitLit of false
-//│ FAILURE: Unexpected runtime error
-//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:154)
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'C2')
-//│     at <static_initializer> (REPL20:1:136)
-//│     at REPL20:1:16
-//│     at ContextifyScript.runInThisContext (node:vm:137:12)
-//│     at REPLServer.defaultEval (node:repl:593:22)
-//│     at bound (node:domain:433:15)
-//│     at REPLServer.runBound [as eval] (node:domain:444:12)
-//│     at REPLServer.onLine (node:repl:922:10)
-//│     at REPLServer.emit (node:events:518:28)
-//│     at REPLServer.emit (node:domain:489:12)
-//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
+  val t = D2.C2.B.A.a
+//│ JS (unsanitized):
+//│ let Trt1;
+//│ Trt1 = function Trt(D2) {
+//│   let Trt2;
+//│   Trt2 = class Trt {
+//│     static {
+//│       Trt2 = Trt;
+//│       Trt2.D2 = D2;
+//│       this.t = Trt.D2.C2.B.A.a;
+//│     }
+//│     static toString() { return "Trt"; }
+//│   };
+//│   return Trt2
+//│ };
 
-:todo // this should error
-:rt
-:e
+:sjs
 object Trt with
   require D as D2
-  val t = D2.C2.B.A.b
-//│ Resolved tree:
-//│ Blk:
-//│   stats = Ls of 
-//│     ModuleDef:
-//│       owner = N
-//│       sym = object:Trt
-//│       bsym = member:Trt
-//│       tparams = Nil
-//│       paramsOpt = N
-//│       auxParams = Nil
-//│       ext = N
-//│       kind = Obj
-//│       body = ObjBody of Blk:
-//│         stats = Ls of 
-//│           Require:
-//│             sym = module:D2
-//│             mod = trait:D
-//│             path = S of Ref{member:D} of member:D
-//│           TermDefinition:
-//│             owner = S of object:Trt
-//│             k = ImmutVal
-//│             sym = member:t
-//│             params = Nil
-//│             tparams = N
-//│             sign = N
-//│             body = S of Sel:
-//│               prefix = Sel:
-//│                 prefix = Sel:
-//│                   prefix = Sel:
-//│                     prefix = SynthSel{member:D2}:
-//│                       prefix = Ref{object:Trt} of object:Trt
-//│                       nme = Ident of "D2"
-//│                     nme = Ident of "C2"
-//│                   nme = Ident of "B"
-//│                 nme = Ident of "A"
-//│               nme = Ident of "b"
-//│             resSym = ‹result of member:t›
-//│             flags = ()
-//│             modulefulness = Modulefulness of N
-//│             annotations = Nil
-//│         res = Lit of UnitLit of false
-//│       annotations = Nil
-//│   res = Lit of UnitLit of false
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'C2')
+  val t = D2.C2.B.A.a
+//│ JS (unsanitized):
+//│ let Trt3;
+//│ const Trt$class = class Trt2 {
+//│   constructor() {
+//│     let tmp, tmp1, tmp2;
+//│     tmp = runtime.safeCall(A1());
+//│     tmp1 = runtime.safeCall(B1(tmp));
+//│     tmp2 = runtime.safeCall(C1(tmp1));
+//│     this.D2 = runtime.safeCall(D1(tmp2));
+//│     this.t = this.D2.C2.B.A.a;
+//│   }
+//│   toString() { return "Trt"; }
+//│ }; Trt3 = new Trt$class;
+//│ Trt3.class = Trt$class;
 
-
+Trt.t
+//│ = 1

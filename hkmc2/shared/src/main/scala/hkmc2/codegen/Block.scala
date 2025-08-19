@@ -386,7 +386,7 @@ final case class ClsLikeDefn(
 
 final case class TraitDefn(
     owner: Opt[InnerSymbol],
-    isym: MemberSymbol[? <: TraitDef] & InnerSymbol,
+    isym: MemberSymbol[? <: ClassLikeDef] & InnerSymbol,
     sym: BlockMemberSymbol,
     paramsOpt: Opt[ParamList],
     auxParams: List[ParamList],
@@ -394,7 +394,8 @@ final case class TraitDefn(
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
     publicFields: Ls[BlockMemberSymbol],
-    requires: Ls[TraitSymbol],
+    requires: Ls[Require],
+    hasChild: Bool,
     ctor: Block,
 ) extends Defn:
   val innerSym = S(isym)
