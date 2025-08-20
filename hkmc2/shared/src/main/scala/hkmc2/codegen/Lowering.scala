@@ -196,7 +196,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         Define(
           TraitDefn(
             N, trt.sym, trt.bsym, trt.paramsOpt, trt.auxParams,
-            N, mtds, privateFlds, publicFlds, requires, trt.hasChild, ctor
+            N, mtds, privateFlds, publicFlds, requires, ctor
           ),
           block(impls ::: stats, res)(k)
         )
@@ -211,28 +211,23 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
               case r: Require => Left(r)
               case o => Right(o) 
             (impls, requires, ObjBody(Term.Blk(others, res)))
-
-        def parentChain(trt: TraitSymbol): Term.Tup => Term.Tup =
-          val defn = trt.defn.getOrElse:
-            wat(s"Trait ${trt.nme} has no definition", trt)
-          defn.parent
-            .map(trt => (trm: Term) =>
-              val thingy = Term.App(defn.bsym.ref().noIArgs, trm)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).noIArgs
-              parentChain(trt)(Term.Tup(Ls(PlainFld(thingy)))(Tree.DummyTup)))
-            .getOrElse(t => t)
         
-        def buildTrait(r: Require): Term =
-          val trt = r.mod
+        def buildTrait(trt: TraitSymbol, path: Ls[TraitSymbol]): Term =
           val defn = trt.defn.getOrElse:
             wat(s"Trait ${trt.nme} has no definition", trt) 
           val requires = defn.body.blk.stats.collect:
             case r: Require => r
-          val parent = r.finalImpl.map(parentChain(_)(Term.Tup(Nil)(Tree.DummyTup))).map(_.fields)
-          val childTraits = Term.Tup(parent.toList.flatMap(identity) ::: requires.map(r => buildTrait(r)).map(PlainFld(_)))(Tree.DummyTup)
+          val obj = ctx.get("Object").get.ref(Ident("Object")).asInstanceOf[Term.Ref].noIArgs // wtf
+          val impl = path match
+            case Nil => N
+            case h :: t => S((h, t))
+          val implArg = impl.map(p => buildTrait(p._1, p._2)).getOrElse(obj)
+          val childTraits = Term.Tup((implArg :: requires.map(r => (r.mod, r.implPath)).map(p => buildTrait(p._1, p._2)))
+            .map(PlainFld(_)))(Tree.DummyTup)
           Term.App(defn.bsym.ref().noIArgs, childTraits)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).noIArgs
 
         def withTraitAssigns(rest: Block) = requires.foldRight(rest): (r, rest) =>
-          term(buildTrait(r)): res => 
+          term(buildTrait(r.mod, r.implPath)): res => 
             subTerm(cls.sym.ref().noIArgs): p =>
               AssignField(p, r.sym.id, res, rest)(N)
 
@@ -1132,7 +1127,7 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
   override def applyDefn(defn: Defn): Defn = defn match
     case _: FunDefn | _: ClsLikeDefn | _: ValDefn => super.applyDefn(defn)
     case td @ TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods, 
-      privFlds, pubFlds, requires, hasChild, ctor) =>
+      privFlds, pubFlds, requires, ctor) =>
       val clsSym = BlockMemberSymbol(sym.nme, Nil, true)
       
       val params = requires.map:
@@ -1156,7 +1151,7 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
 
       val newCtor = withAssigns(params.map(_._1))
 
-      val implParam = (if hasChild then S(hasChild) else N).map: _ =>
+      val implParam =
         val varSym = VarSymbol(Ident("Impl"))
         // what's the right way to do this?
         val clsWithPathDef = (low.subTerm(varSym.ref().noIArgs): path => 
@@ -1166,10 +1161,8 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
           case Define(defn, _) => defn
         (Param(FldFlags.empty, varSym, N, Modulefulness.none), clsWithPath)
           
-      val cls = implParam.map(_._2).getOrElse:
-        ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, N, methods, 
-            privFlds, pubFlds, End(), newCtor)
+      val cls = implParam._2
 
-      FunDefn(owner, sym, ParamList(ParamListFlags.empty, implParam.map(_._1).toList ::: params.map(_._2), N) :: Nil,
+      FunDefn(owner, sym, ParamList(ParamListFlags.empty, implParam._1 :: params.map(_._2), N) :: Nil,
         Define(cls, Return(Value.Ref(cls.sym), false)))
 

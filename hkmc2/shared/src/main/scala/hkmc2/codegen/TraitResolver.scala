@@ -19,22 +19,22 @@ object TraitLifter
 
 class TraitResolver(using Raise):
 
-  def getAbstracts(cls: ClassLikeDef): Map[Ls[FieldSymbol], (TraitDef, Opt[Require], Ls[TermDefinition])] =
+  def getAbstracts(cls: ClassLikeDef): Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])] =
     val requires = cls.body.blk.stats.collect:
       case r: Require => r
-    .foldLeft(Map.empty[Ls[FieldSymbol], (TraitDef, Opt[Require], Ls[TermDefinition])]): (acc, r) =>
+    .foldLeft(Map.empty[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])]): (acc, r) =>
       val inherited = r.mod.defn.flatMap(_.abs).getOrElse(Map.empty)
       inherited.foldLeft(acc):
-        case (acc, (path, (td, or, abs))) =>
+        case (acc, (path, (implPath, or, abs))) =>
           val req: Opt[Require] = or match
             case Some(r) => Some(r)
             case None => Some(r)
           acc.updatedWith(cls.sym :: path):
-            case Some(td, N, abs) => Some(td, req, abs)
+            case Some(implPath, N, abs) => Some(implPath, req, abs)
             case Some(stuff) => Some(stuff) // is case be necessary?
-            case None => Some(td, req, abs)
+            case None => Some(implPath, req, abs)
 
-    println(s"requires: ${requires}")
+    println(s"requires: ${requires.keys.mkString(", ")}")
 
     val abstracts = cls.body.blk.stats.collect:
       case td: TermDefinition if td.body is N => td
@@ -52,8 +52,6 @@ class TraitResolver(using Raise):
         trmToPath(sel) -> (tds, p)
     .toMap
 
-    println(s"impls: ${impls}")
-
     def findMostSpecificImpl(path: Ls[FieldSymbol]): Option[(Ls[TermDefinition], TraitDef)] =
       println(s"Finding most specific impl for path: ${path}")
       if impls.contains(path)
@@ -61,28 +59,28 @@ class TraitResolver(using Raise):
         else if path.tail.nonEmpty then findMostSpecificImpl(path.tail)
         else None
     def checkImplsSat(abs: TermDefinition)(imp: TermDefinition) = abs.sym.nme == imp.sym.nme
-    val updatedRequires: Map[Ls[FieldSymbol], (TraitDef, Opt[Require], Ls[TermDefinition])] = requires.foldLeft(Map.empty):
-      case (acc, (reqPath, (td, or, abs))) =>
+    val updatedRequires: Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])] = requires.foldLeft(Map.empty):
+      case (acc, (reqPath, (implPath, or, abs))) =>
         if abs.nonEmpty then
           val implOpt = findMostSpecificImpl(reqPath)
           val res = if implOpt.nonEmpty
           then
+            println(s"Found impl for ${reqPath.mkString(".")}: ${implOpt.get._2.sym.nme}")
             val (tds, implTrait) = implOpt.get
-            implTrait.parent = S(td.sym)
-            td.hasChild = true // probably can do a more modular thing
             val filtered = abs.filterNot(td => tds.exists(checkImplsSat(td)))
             (or, filtered) match
-              case (S(r), Nil) => r.finalImpl = S(implTrait.sym)
+              case (S(r), Nil) => 
+                println(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
+                r.implPath = (implTrait.sym :: implPath).reverse
               case _ => 
-            (implTrait, or, filtered)
-          else (td, or, abs)
+            (implTrait.sym :: implPath, or, filtered)
+          else (implPath, or, abs)
           acc.updated(reqPath, res)
-        else acc.updated(reqPath, (td, or, abs))
+        else acc.updated(reqPath, (implPath, or, abs))
 
     cls match
       case t: TraitDef =>
-        val value = (t, N, abstracts)
-        if abstracts.nonEmpty then t.hasChild = true
+        val value = (Nil, N, abstracts)
         updatedRequires.updated(cls.sym.asTrt.get :: Nil, value)
       case _ => updatedRequires
 
@@ -90,7 +88,6 @@ class TraitResolver(using Raise):
     println(s"================================")
     println(s"Class = ${cls.sym.nme}")
     val ownAbstracts = getAbstracts(cls)
-    println(ownAbstracts)
     cls.abs = S(ownAbstracts)
     cls match
       case t: TraitDef =>

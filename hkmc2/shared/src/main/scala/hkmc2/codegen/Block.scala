@@ -395,7 +395,6 @@ final case class TraitDefn(
     privateFields: Ls[TermSymbol],
     publicFields: Ls[BlockMemberSymbol],
     requires: Ls[Require],
-    hasChild: Bool,
     ctor: Block,
 ) extends Defn:
   val innerSym = S(isym)

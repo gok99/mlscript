@@ -1,7 +1,5 @@
 :js
 
-// Should we support?
-
 trait Foo with
   val foo: Int
   fun loo: Int
@@ -23,9 +21,16 @@ trait Bar2 with
 trait Baz with
   require Bar
   require Bar2
-  implement Foo with
+  implement Bar.Foo with
     fun loo = 3
-  fun tootoo() = Bar.Foo.too() + Bar2.Foo.too()
+  fun tootoo() = Bar.Foo.too + Bar2.Foo.too
 
+class Test with
+  require Baz
+  implement Foo with
+    fun loo = 2
+  val a = Baz.tootoo()
 
+new Test().a
+//│ = 5
 
