@@ -18,9 +18,9 @@ trait Trt with
   val t = D2.C2.B.A.a
 //│ JS (unsanitized):
 //│ let Trt1;
-//│ Trt1 = function Trt(D2) {
+//│ Trt1 = function Trt(Impl, D2) {
 //│   let Trt2;
-//│   Trt2 = class Trt {
+//│   Trt2 = class Trt extends Impl {
 //│     static {
 //│       Trt2 = Trt;
 //│       Trt2.D2 = D2;
@@ -40,10 +40,10 @@ object Trt with
 //│ const Trt$class = class Trt2 {
 //│   constructor() {
 //│     let tmp, tmp1, tmp2;
-//│     tmp = runtime.safeCall(A1());
-//│     tmp1 = runtime.safeCall(B1(tmp));
-//│     tmp2 = runtime.safeCall(C1(tmp1));
-//│     this.D2 = runtime.safeCall(D1(tmp2));
+//│     tmp = runtime.safeCall(A1(globalThis.Object));
+//│     tmp1 = runtime.safeCall(B1(globalThis.Object, tmp));
+//│     tmp2 = runtime.safeCall(C1(globalThis.Object, tmp1));
+//│     this.D2 = runtime.safeCall(D1(globalThis.Object, tmp2));
 //│     this.t = this.D2.C2.B.A.a;
 //│   }
 //│   toString() { return "Trt"; }

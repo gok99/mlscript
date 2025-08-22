@@ -3,10 +3,10 @@
 trait Pred with
   fun foo(x) = x + 1
 
-:todo // should be an error
+:todo // should probably be compile error?
 :e
 Pred.foo(1)
-//│ = 2
+//│ ═══[RUNTIME ERROR] TypeError: Pred1.foo is not a function
 
 :todo // finish lowering
 :rt
@@ -23,7 +23,6 @@ trait Lel with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:Lel
 //│       bsym = member:Lel
 //│       tparams = Nil
@@ -32,7 +31,6 @@ trait Lel with
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
 //│           TraitDef:
-//│             owner = S of trait:Lel
 //│             sym = trait:What
 //│             bsym = member:What
 //│             tparams = Nil
@@ -56,17 +54,16 @@ trait Lel with
 //│                   flags = ()
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
-//│                 Plain:
-//│                   owner = S of trait:What
-//│                   kind = Imp
-//│                   sym = class:Lel
-//│                   bsym = member:Lel
+//│                 TraitDef:
+//│                   sym = trait:$imp$Lel
+//│                   bsym = member:$imp$Lel
 //│                   tparams = Nil
-//│                   ext = N
+//│                   paramsOpt = N
+//│                   auxParams = Nil
 //│                   body = ObjBody of Blk:
 //│                     stats = Ls of 
 //│                       TermDefinition:
-//│                         owner = S of class:Lel
+//│                         owner = S of trait:$imp$Lel
 //│                         k = ImmutVal
 //│                         sym = member:x
 //│                         params = Nil
@@ -74,15 +71,17 @@ trait Lel with
 //│                         sign = N
 //│                         body = S of Lit of IntLit of 1
 //│                         resSym = ‹result of member:x›
-//│                         flags = (method)
+//│                         flags = ()
 //│                         modulefulness = Modulefulness of N
 //│                         annotations = Nil
 //│                     res = Lit of UnitLit of false
-//│                   companion = N
-//│                   trt = S of Ref{member:Lel} of member:Lel
+//│                   kind = Imp
 //│                   annotations = Nil
+//│                   trt = Ref{member:Lel} of member:Lel
 //│               res = Lit of UnitLit of false
+//│             kind = Trt
 //│             annotations = Nil
+//│             trt = Ref{trait:What} of trait:What
 //│           Require:
 //│             sym = module:Pred
 //│             mod = trait:Pred
@@ -111,54 +110,50 @@ trait Lel with
 //│             modulefulness = Modulefulness of N
 //│             annotations = Nil
 //│         res = Lit of UnitLit of false
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:Lel} of trait:Lel
 //│   res = Lit of UnitLit of false
-//│ FAILURE: Unexpected runtime error
-//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:154)
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
-//│     at <static_initializer> (REPL14:1:383)
-//│     at REPL14:1:16
-//│     at ContextifyScript.runInThisContext (node:vm:137:12)
-//│     at REPLServer.defaultEval (node:repl:593:22)
-//│     at bound (node:domain:433:15)
-//│     at REPLServer.runBound [as eval] (node:domain:444:12)
-//│     at REPLServer.onLine (node:repl:922:10)
-//│     at REPLServer.emit (node:events:518:28)
-//│     at REPLServer.emit (node:domain:489:12)
-//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 
 :sjs
-module M with
+class M with
   require Lel
   implement Lel with
     fun f(x) = x
     val x = 1
 //│ JS (unsanitized):
-//│ let M1;
-//│ (class M {
-//│   static {
-//│     M1 = M;
-//│     this.Lel = class Lel3 {
-//│       constructor() {
-//│         this.x = 1;
-//│       }
-//│       f(x) {
-//│         return x
-//│       }
-//│       toString() { return "Lel"; }
-//│     };
+//│ let M1, $imp$Lel3;
+//│ M1 = class M {
+//│   constructor() {
+//│     let tmp, tmp1;
+//│     tmp = runtime.safeCall($imp$Lel3(globalThis.Object));
+//│     tmp1 = runtime.safeCall(Pred1(globalThis.Object));
+//│     this.Lel = runtime.safeCall(Lel1(tmp, tmp1));
 //│   }
-//│   static toString() { return "M"; }
-//│ });
+//│   toString() { return "M"; }
+//│ };
+//│ $imp$Lel3 = function $imp$Lel(Impl) {
+//│   let $imp$Lel4;
+//│   $imp$Lel4 = class $imp$Lel2 extends Impl {
+//│     static {
+//│       $imp$Lel4 = $imp$Lel2;
+//│       this.x = 1;
+//│     }
+//│     static f(x) {
+//│       return x
+//│     }
+//│     static toString() { return "$imp$Lel"; }
+//│   };
+//│   return $imp$Lel4
+//│ };
 
 
-M.Lel
-//│ = class Lel3 {       constructor() {         this.x = 1;       }       get f$__checkNotMethod() { runtime.deboundMethod("f", "Lel"); }       f(...args) {         runtime.checkArgs("f", 1, true, args.length);         let x = args[0];         return x       }       toString() { return "Lel"; }     }
+new M().Lel.f
+//│ = [function f]
 
-:fixme
-M.Lel.f(1)
-//│ ═══[RUNTIME ERROR] TypeError: selRes1.f is not a function
+new M().Lel.f(1)
+//│ = 1
 
 
 :rt
@@ -173,7 +168,6 @@ trait Lol with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:Lol
 //│       bsym = member:Lol
 //│       tparams = Nil
@@ -197,17 +191,16 @@ trait Lol with
 //│             flags = ()
 //│             modulefulness = Modulefulness of N
 //│             annotations = Nil
-//│           Plain:
-//│             owner = S of trait:Lol
-//│             kind = Imp
-//│             sym = class:Pred
-//│             bsym = member:Pred
+//│           TraitDef:
+//│             sym = trait:$imp$Lel$Pred
+//│             bsym = member:$imp$Lel$Pred
 //│             tparams = Nil
-//│             ext = N
+//│             paramsOpt = N
+//│             auxParams = Nil
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of class:Pred
+//│                   owner = S of trait:$imp$Lel$Pred
 //│                   k = ImmutVal
 //│                   sym = member:l
 //│                   params = Nil
@@ -215,11 +208,11 @@ trait Lol with
 //│                   sign = N
 //│                   body = S of Lit of IntLit of 1
 //│                   resSym = ‹result of member:l›
-//│                   flags = (method)
+//│                   flags = ()
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│                 TermDefinition:
-//│                   owner = S of class:Pred
+//│                   owner = S of trait:$imp$Lel$Pred
 //│                   k = ImmutVal
 //│                   sym = member:r
 //│                   params = Nil
@@ -227,22 +220,19 @@ trait Lol with
 //│                   sign = N
 //│                   body = S of Lit of IntLit of 2
 //│                   resSym = ‹result of member:r›
-//│                   flags = (method)
+//│                   flags = ()
 //│                   modulefulness = Modulefulness of N
 //│                   annotations = Nil
 //│               res = Lit of UnitLit of false
-//│             companion = N
-//│             trt = S of Sel{trait:Pred}:
+//│             kind = Imp
+//│             annotations = Nil
+//│             trt = Sel{trait:Pred}:
 //│               prefix = Ref{member:Lel} of member:Lel
 //│               nme = Ident of "Pred"
-//│             annotations = Nil
 //│         res = Lit of UnitLit of false
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:Lol} of trait:Lol
 //│   res = Lit of UnitLit of false
-
-:e
-class A with
-  require Lol
-//│ FAILURE: Unexpected lack of type error
 
 
