@@ -1,0 +1,42 @@
+:js
+
+
+trait Foo
+
+:fixme
+class Bar with
+  require Foo
+  val bar = 123
+  implement Foo with
+    print(bar) // TODO reject
+//│ /!!!\ Uncaught error: hkmc2.InternalError: `this` not in scope: class:Bar
+
+trait Bar with
+  require Foo
+  val bar = 123
+  implement Foo with
+    fun foo = bar // TODO reject? not implementing anything
+
+:fixme
+class C with
+  require Bar
+new C().Bar.Foo.foo
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'foo' yielded 'undefined'
+
+
+trait Foo with
+  fun foo: Int
+
+trait Bar with
+  require Foo
+  val bar = 123
+  implement Foo with
+    fun foo = bar // TODO reject: no access to `bar` here
+
+:fixme
+class C with
+  require Bar
+new C().Bar.Foo.foo
+//│ ═══[RUNTIME ERROR] ReferenceError: Bar4 is not defined
+
+

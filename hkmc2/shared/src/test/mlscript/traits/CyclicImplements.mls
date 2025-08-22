@@ -16,6 +16,7 @@ trait Bar2 with
   require Foo
   fun bar() = Foo.boo() + 1
 
+:sjs
 trait Baz with
   require Bar
   require Bar2
@@ -26,5 +27,75 @@ trait Baz with
     val foo = Bar.Foo.foo
     fun loo = 3
   fun tootoo() = Bar.Foo.too() + Bar2.Foo.too()
+//│ JS (unsanitized):
+//│ let Baz1, $imp$Bar$Foo1, $imp$Bar2$Foo1;
+//│ Baz1 = function Baz(Impl, Bar3, Bar22) {
+//│   let Baz2;
+//│   Baz2 = class Baz extends Impl {
+//│     static {
+//│       Baz2 = Baz;
+//│       Baz2.Bar = Bar3;
+//│       Baz2.Bar2 = Bar22;
+//│     }
+//│     static tootoo() {
+//│       let tmp, tmp1;
+//│       tmp = runtime.safeCall(Baz.Bar.Foo.too());
+//│       tmp1 = runtime.safeCall(Baz.Bar2.Foo.too());
+//│       return tmp + tmp1
+//│     }
+//│     static toString() { return "Baz"; }
+//│   };
+//│   return Baz2
+//│ };
+//│ $imp$Bar$Foo1 = function $imp$Bar$Foo(Impl) {
+//│   let $imp$Bar$Foo2;
+//│   $imp$Bar$Foo2 = class $imp$Bar$Foo extends Impl {
+//│     static {
+//│       $imp$Bar$Foo2 = $imp$Bar$Foo;
+//│       this.foo = 1;
+//│     }
+//│     static get loo() {
+//│       return Baz.Bar2.Foo.loo;
+//│     }
+//│     static toString() { return "$imp$Bar$Foo"; }
+//│   };
+//│   return $imp$Bar$Foo2
+//│ };
+//│ $imp$Bar2$Foo1 = function $imp$Bar2$Foo(Impl) {
+//│   let $imp$Bar2$Foo2;
+//│   $imp$Bar2$Foo2 = class $imp$Bar2$Foo extends Impl {
+//│     static {
+//│       $imp$Bar2$Foo2 = $imp$Bar2$Foo;
+//│       this.foo = Baz.Bar.Foo.foo;
+//│     }
+//│     static get loo() {
+//│       return 3;
+//│     }
+//│     static toString() { return "$imp$Bar2$Foo"; }
+//│   };
+//│   return $imp$Bar2$Foo2
+//│ };
+
+:fixme
+:sjs
+object Test with
+  require Baz
+//│ JS (unsanitized):
+//│ let Test1;
+//│ const Test$class = class Test {
+//│   constructor() {
+//│     let tmp, tmp1, tmp2, tmp3, tmp4, tmp5;
+//│     tmp = runtime.safeCall($imp$Bar$Foo1(globalThis.Object));
+//│     tmp1 = runtime.safeCall(Foo1(tmp));
+//│     tmp2 = runtime.safeCall(Bar1(globalThis.Object, tmp1));
+//│     tmp3 = runtime.safeCall($imp$Bar2$Foo1(globalThis.Object));
+//│     tmp4 = runtime.safeCall(Foo1(tmp3));
+//│     tmp5 = runtime.safeCall(Bar21(globalThis.Object, tmp4));
+//│     this.Baz = runtime.safeCall(Baz1(globalThis.Object, tmp2, tmp5));
+//│   }
+//│   toString() { return "Test"; }
+//│ }; Test1 = new Test$class;
+//│ Test1.class = Test$class;
+//│ ═══[RUNTIME ERROR] ReferenceError: Baz is not defined
 
 

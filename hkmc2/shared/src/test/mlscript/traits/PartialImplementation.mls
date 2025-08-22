@@ -1,36 +1,159 @@
 :js
 
+// :dl
+:sjs
 trait Foo with
   val foo: Int
   fun loo: Int
   fun boo() = foo * 10
   val too = loo
+  print(foo)
+  val foo2: Int = 1
+//│ JS (unsanitized):
+//│ let Foo1;
+//│ Foo1 = function Foo(Impl) {
+//│   let Foo2;
+//│   Foo2 = class Foo extends Impl {
+//│     static {
+//│       Foo2 = Foo;
+//│       let tmp;
+//│       this.too = Foo.loo;
+//│       tmp = Predef.print(Foo.foo);
+//│       this.foo2 = 1;
+//│     }
+//│     static boo() {
+//│       return Foo.foo * 10
+//│     }
+//│     static toString() { return "Foo"; }
+//│   };
+//│   return Foo2
+//│ };
 
 trait Bar with
   require Foo
   implement Foo with
     val foo = 1
+    // print(Foo.foo2)
   fun bar() = Foo.boo()
 
+:sjs
 trait Bar2 with
   require Foo
   implement Foo with
     val foo = 1
   fun bar() = Foo.boo() + 1
+//│ JS (unsanitized):
+//│ let Bar21, $imp$Foo3;
+//│ Bar21 = function Bar2(Impl, Foo2) {
+//│   let Bar22;
+//│   Bar22 = class Bar2 extends Impl {
+//│     static {
+//│       Bar22 = Bar2;
+//│       Bar22.Foo = Foo2;
+//│     }
+//│     static bar() {
+//│       let tmp;
+//│       tmp = Bar2.Foo.boo();
+//│       return tmp + 1
+//│     }
+//│     static toString() { return "Bar2"; }
+//│   };
+//│   return Bar22
+//│ };
+//│ $imp$Foo3 = function $imp$Foo(Impl) {
+//│   let $imp$Foo4;
+//│   $imp$Foo4 = class $imp$Foo2 extends Impl {
+//│     static {
+//│       $imp$Foo4 = $imp$Foo2;
+//│       this.foo = 1;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo4
+//│ };
 
+:sjs
 trait Baz with
   require Bar
   require Bar2
   implement Bar.Foo with
     fun loo = 3
   fun tootoo() = Bar.Foo.too + Bar2.Foo.too
+//│ JS (unsanitized):
+//│ let Baz1, $imp$Bar$Foo1;
+//│ Baz1 = function Baz(Impl, Bar3, Bar22) {
+//│   let Baz2;
+//│   Baz2 = class Baz extends Impl {
+//│     static {
+//│       Baz2 = Baz;
+//│       Baz2.Bar = Bar3;
+//│       Baz2.Bar2 = Bar22;
+//│     }
+//│     static tootoo() {
+//│       return Baz.Bar.Foo.too + Baz.Bar2.Foo.too
+//│     }
+//│     static toString() { return "Baz"; }
+//│   };
+//│   return Baz2
+//│ };
+//│ $imp$Bar$Foo1 = function $imp$Bar$Foo(Impl) {
+//│   let $imp$Bar$Foo2;
+//│   $imp$Bar$Foo2 = class $imp$Bar$Foo extends Impl {
+//│     static {
+//│       $imp$Bar$Foo2 = $imp$Bar$Foo;
+//│     }
+//│     static get loo() {
+//│       return 3;
+//│     }
+//│     static toString() { return "$imp$Bar$Foo"; }
+//│   };
+//│   return $imp$Bar$Foo2
+//│ };
 
+:sjs
 class Test with
   require Baz
   implement Foo with
     fun loo = 2
   val a = Baz.tootoo()
+  print(Baz.Bar.Foo.foo)
+//│ JS (unsanitized):
+//│ let Test1, $imp$Foo5;
+//│ Test1 = class Test {
+//│   constructor() {
+//│     let tmp, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+//│     tmp1 = runtime.safeCall($imp$Bar$Foo1(globalThis.Object));
+//│     tmp2 = runtime.safeCall($imp$Foo1(tmp1));
+//│     tmp3 = runtime.safeCall(Foo1(tmp2));
+//│     tmp4 = runtime.safeCall(Bar1(globalThis.Object, tmp3));
+//│     tmp5 = runtime.safeCall($imp$Foo5(globalThis.Object));
+//│     tmp6 = runtime.safeCall($imp$Foo3(tmp5));
+//│     tmp7 = runtime.safeCall(Foo1(tmp6));
+//│     tmp8 = runtime.safeCall(Bar21(globalThis.Object, tmp7));
+//│     this.Baz = runtime.safeCall(Baz1(globalThis.Object, tmp4, tmp8));
+//│     tmp = runtime.safeCall(this.Baz.tootoo());
+//│     this.a = tmp;
+//│     Predef.print(this.Baz.Bar.Foo.foo)
+//│   }
+//│   toString() { return "Test"; }
+//│ };
+//│ $imp$Foo5 = function $imp$Foo(Impl) {
+//│   let $imp$Foo6;
+//│   $imp$Foo6 = class $imp$Foo4 extends Impl {
+//│     static {
+//│       $imp$Foo6 = $imp$Foo4;
+//│     }
+//│     static get loo() {
+//│       return 2;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo6
+//│ };
 
 new Test().a
+//│ > 1
+//│ > 1
+//│ > 1
 //│ = 5
 

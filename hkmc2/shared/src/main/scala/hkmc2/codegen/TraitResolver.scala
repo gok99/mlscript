@@ -17,8 +17,10 @@ import hkmc2.semantics.ClassDef.Plain
 
 object TraitLifter
 
-class TraitResolver(using Raise):
-
+class TraitResolver(using Raise, TraceLogger):
+  
+  val tl = summon[TraceLogger]
+  
   def getAbstracts(cls: ClassLikeDef): Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])] =
     val requires = cls.body.blk.stats.collect:
       case r: Require => r
@@ -34,7 +36,7 @@ class TraitResolver(using Raise):
             case Some(stuff) => Some(stuff) // is case be necessary?
             case None => Some(implPath, req, abs)
 
-    println(s"requires: ${requires.keys.mkString(", ")}")
+    tl.log(s"requires: ${requires.keys.mkString(", ")}")
 
     val abstracts = cls.body.blk.stats.collect:
       case td: TermDefinition if td.body is N => td
@@ -53,7 +55,7 @@ class TraitResolver(using Raise):
     .toMap
 
     def findMostSpecificImpl(path: Ls[FieldSymbol]): Option[(Ls[TermDefinition], TraitDef)] =
-      println(s"Finding most specific impl for path: ${path}")
+      tl.log(s"Finding most specific impl for path: ${path}")
       if impls.contains(path)
         then Some(impls(path))
         else if path.tail.nonEmpty then findMostSpecificImpl(path.tail)
@@ -65,12 +67,12 @@ class TraitResolver(using Raise):
           val implOpt = findMostSpecificImpl(reqPath)
           val res = if implOpt.nonEmpty
           then
-            println(s"Found impl for ${reqPath.mkString(".")}: ${implOpt.get._2.sym.nme}")
+            tl.log(s"Found impl for ${reqPath.mkString(".")}: ${implOpt.get._2.sym.nme}")
             val (tds, implTrait) = implOpt.get
             val filtered = abs.filterNot(td => tds.exists(checkImplsSat(td)))
             (or, filtered) match
               case (S(r), Nil) => 
-                println(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
+                tl.log(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
                 r.implPath = (implTrait.sym :: implPath).reverse
               case _ => 
             (implTrait.sym :: implPath, or, filtered)
@@ -85,8 +87,8 @@ class TraitResolver(using Raise):
       case _ => updatedRequires
 
   def resolveRequires(cls: ClassLikeDef) =
-    println(s"================================")
-    println(s"Class = ${cls.sym.nme}")
+    tl.log(s"================================")
+    tl.log(s"Class = ${cls.sym.nme}")
     val ownAbstracts = getAbstracts(cls)
     cls.abs = S(ownAbstracts)
     cls match
