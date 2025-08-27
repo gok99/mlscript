@@ -75,6 +75,10 @@ class TraitResolver(using Raise, TraceLogger, State):
       case r: Require =>
         // update trait's deps
         r.mod.defn.foreach(tdep => deps = deps ++ tdep.deps + r.mod)
+        if r.mod.defn.flatMap(trt => cls.sym.asTrt.map(thisTrt => trt.deps.contains(thisTrt))).getOrElse(false)
+        then raise:
+          ErrorReport:
+            msg"Trait ${cls.sym.nme} cannot require trait ${r.mod.nme} that (transitively) depends on ${cls.sym.nme}" -> r.toLoc :: Nil
         r
     val requires = rs
     .foldLeft(Map.empty[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])]): (acc, r) =>
