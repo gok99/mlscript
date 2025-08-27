@@ -193,11 +193,13 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         val (mtds, publicFlds, privateFlds, ctor) = gatherMembers(others)
         val requires = trt.body.blk.stats.collect:
           case r: Require => r
-        Define(
-          TraitDefn(
+        val td = TraitDefn(
             N, trt.sym, trt.bsym, trt.paramsOpt, trt.auxParams,
             N, mtds, privateFlds, publicFlds, requires, ctor
-          ),
+          )
+        td.impReqs = trt.impReqs
+        Define(
+          td,
           block(impls ::: stats, res)(k)
         )
       case cls: ClassLikeDef =>
@@ -215,7 +217,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         def buildTrait(trt: TraitSymbol, path: Ls[TraitSymbol]): Term =
           val defn = trt.defn.getOrElse:
             wat(s"Trait ${trt.nme} has no definition", trt) 
-          val requires = defn.body.blk.stats.collect:
+          val requires = defn.impReqs.toList ++ defn.body.blk.stats.collect:
             case r: Require => r
           val obj = ctx.get("Object").get.ref(Ident("Object")).asInstanceOf[Term.Ref].noIArgs // wtf
           val impl = path match
@@ -235,25 +237,27 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
         val ctor = withTraitAssigns(ctorPre)
         cls.ext match
         case N =>
-          Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
-                mtds,
-                privateFlds,
-                publicFlds,
-                End(),
-                ctor
-              ),
-            blockImpl(impls ::: stats, res)(k))
+          blockImpl(impls, L(Nil)): _ =>
+            Define(ClsLikeDefn(cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, N,
+                  mtds,
+                  privateFlds,
+                  publicFlds,
+                  End(),
+                  ctor
+                ),
+              blockImpl(stats, res)(k))
         case S(ext) =>
           assert(k isnt syntax.Mod) // modules can't extend things and can't have super calls
           subTerm(ext.cls): clsp =>
             val pctor = parentConstructor(ext.cls, ext.argss)
-            Define(
-              ClsLikeDefn(
-                cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp),
-                mtds, privateFlds, publicFlds, pctor, ctor
-              ),
-              blockImpl(stats, res)(k)
-            )
+            blockImpl(impls, L(Nil)): _ =>
+              Define(
+                ClsLikeDefn(
+                  cls.owner, cls.sym, cls.bsym, cls.kind, cls.paramsOpt, cls.auxParams, S(clsp),
+                  mtds, privateFlds, publicFlds, pctor, ctor
+                ),
+                blockImpl(stats, res)(k)
+              )
       case td: (TypeDef | Require) => // * Type definitions and requires are erased
         blockImpl(stats, res)(k)
   
@@ -1135,6 +1139,24 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
           val varSym = VarSymbol(r.sym.id)
           (varSym, Param(FldFlags.empty, varSym, N, Modulefulness.none))
       
+      val implicitRequires = td.impReqs.map(r =>
+        val varSym = VarSymbol(r.mod.id)
+        (r.mod, (varSym, Param(FldFlags.empty, varSym, N, Modulefulness.none)))
+      ).toMap
+      
+      class ImplicitRequireTransformer extends BlockTransformer(subs):
+        override def applyLocal(sym: Local) =
+          sym.asTrt.flatMap(implicitRequires.get(_)) match
+            case S(p, _) => p
+            case N => super.applyLocal(sym)
+
+        override def applyValue(v: Value): Value =
+          v match
+          case Value.Ref(l) => l.asTrt.flatMap(implicitRequires.get(_)) match
+            case S(p, _) => Value.Ref(p)
+            case N => super.applyValue(v)
+          case _ => super.applyValue(v)
+      
       given Subst = Subst.empty
       val low = Lowering()
 
@@ -1157,12 +1179,16 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
         val clsWithPathDef = (low.subTerm(varSym.ref().noIArgs): path => 
           Define(ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, S(path), methods, 
             privFlds, pubFlds, End(), newCtor), End())) 
-        val clsWithPath = clsWithPathDef match
+        val impTransformer = ImplicitRequireTransformer()
+        val clsWithPathDefTrans = impTransformer.applyBlock(clsWithPathDef)
+        val clsWithPath = clsWithPathDefTrans match
           case Define(defn, _) => defn
+          case _ => ???
         (Param(FldFlags.empty, varSym, N, Modulefulness.none), clsWithPath)
           
       val cls = implParam._2
+      val allParams = params ++ implicitRequires.values
 
-      FunDefn(owner, sym, ParamList(ParamListFlags.empty, implParam._1 :: params.map(_._2), N) :: Nil,
+      FunDefn(owner, sym, ParamList(ParamListFlags.empty, implParam._1 :: allParams.map(_._2), N) :: Nil,
         Define(cls, Return(Value.Ref(cls.sym), false)))
 

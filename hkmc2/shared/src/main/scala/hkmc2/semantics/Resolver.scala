@@ -718,7 +718,7 @@ class Resolver(tl: TraceLogger)
     case t @ AnySel(lhs: Resolvable, id) =>
       log(s"Resolving symbol for ${t}, defn = ${lhs.defn}")
       lhs.typeDefn match
-        case S(mdef @ (ModuleDef(kind = Mod) | _: TraitDef))=> 
+        case S(mdef @ (ModuleDef(kind = Mod) | _: TraitDef)) if mdef.kind != syntax.Imp => 
           mdef.body.members.get(id.name) match
           case S(sym) =>
             t match
@@ -873,7 +873,7 @@ object ModuleChecker:
       /* Type Declaration / Defintiions */
       // A type is not moduleful if it is not a module. (obvious!)
       case ModuleDef(kind = Mod) => true
-      case _: TraitDef => true
+      case trt: TraitDef if trt.kind == syntax.Trt => true
       // Objects use ModuleDef but is not moduleful.
       case _: TypeLikeDef => false
       

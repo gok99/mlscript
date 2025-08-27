@@ -22,43 +22,64 @@ trait Foo with
 //│   return Foo2
 //│ };
 
-:fixme
 object Bar with
   require Foo
   implement Foo with
     val foo = 1
   fun bar() = Foo.boo()
-//│ ╔══[ERROR] Implement '$imp$Foo' does not contain member 'boo'
-//│ ║  l.30: 	  fun bar() = Foo.boo()
-//│ ╙──      	              ^^^^^^^
-//│ ═══[RUNTIME ERROR] TypeError: $imp$Foo1 is not a function
 
-:fixme
+Bar.bar()
+//│ = 10
+
 object Bar with
   require Foo
   implement Foo with
     val foo = 1
   fun bar() = Bar.Foo.boo()
-//│ ╔══[ERROR] Implement '$imp$Foo' does not contain member 'boo'
-//│ ║  l.41: 	  fun bar() = Bar.Foo.boo()
-//│ ╙──      	              ^^^^^^^^^^^
-//│ ═══[RUNTIME ERROR] TypeError: $imp$Foo3 is not a function
 
+Bar.bar()
+//│ = 10
+
+:sjs
 class Bar with
   require Foo
   implement Foo with
     val foo = 1
   fun bar() = this.Foo.boo()
+//│ JS (unsanitized):
+//│ let Bar5, $imp$Foo5;
+//│ $imp$Foo5 = function $imp$Foo(Impl) {
+//│   let $imp$Foo6;
+//│   $imp$Foo6 = class $imp$Foo4 extends Impl {
+//│     static {
+//│       $imp$Foo6 = $imp$Foo4;
+//│       this.foo = 1;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo6
+//│ };
+//│ Bar5 = class Bar4 {
+//│   constructor() {
+//│     let tmp;
+//│     tmp = runtime.safeCall($imp$Foo5(globalThis.Object));
+//│     this.Foo = runtime.safeCall(Foo1(tmp));
+//│   }
+//│   bar() {
+//│     return runtime.safeCall(this.Foo.boo())
+//│   }
+//│   toString() { return "Bar"; }
+//│ };
+
 new Bar().bar()
 //│ = 10
-
 
 // * Manual encoding
 
 // TODO later: support this
 :todo
 :sjs
-trait FooImpl extends Foo:
+trait FooImpl with
   val foo = 1
 //│ JS (unsanitized):
 //│ let FooImpl1;
@@ -67,42 +88,60 @@ trait FooImpl extends Foo:
 //│   FooImpl2 = class FooImpl extends Impl {
 //│     static {
 //│       FooImpl2 = FooImpl;
+//│       this.foo = 1;
 //│     }
 //│     static toString() { return "FooImpl"; }
 //│   };
 //│   return FooImpl2
 //│ };
 
-object Bar extends FooImpl(Object)
+object Bar extends Foo(Object)
 
 :fixme
-Bar.boo()
-//│ ╔══[ERROR] Object 'Bar' does not contain member 'boo'
-//│ ║  l.79: 	Bar.boo()
-//│ ╙──      	   ^^^^
-//│ ═══[RUNTIME ERROR] TypeError: Bar7.boo is not a function
+Bar.foo()
+//│ ╔══[ERROR] Object 'Bar' does not contain member 'foo'
+//│ ║  l.101: 	Bar.foo()
+//│ ╙──       	   ^^^^
+//│ ═══[RUNTIME ERROR] TypeError: Bar7.foo is not a function
 
 
-// TODO
-:fixme
+:sjs
 class Bar with
   require Foo
   require FooImpl
-  implement Foo with FooImpl
-  fun bar() = this.FooImpl.boo()
+  // implement Foo with FooImpl // TODO: to implement
+  implement Foo with
+    val foo = FooImpl.foo
+  fun bar() = Foo.foo
 new Bar().bar()
-//│ ╔══[ERROR] Illegal body of implement definition (should be a block; found identifier).
-//│ ║  l.91: 	  implement Foo with FooImpl
-//│ ╙──      	                     ^^^^^^^
-//│ ╔══[ERROR] Concrete Bar does not implement all abstract members of trait Foo: foo
-//│ ║  l.89: 	  require Foo
-//│ ║        	          ^^^
-//│ ║  l.90: 	  require FooImpl
-//│ ║        	^^^^^^^^^^^^^^^^^
-//│ ║  l.91: 	  implement Foo with FooImpl
-//│ ║        	^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.92: 	  fun bar() = this.FooImpl.boo()
-//│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ═══[RUNTIME ERROR] TypeError: selRes.boo is not a function
+//│ JS (unsanitized):
+//│ let Bar9, $imp$Foo7, tmp1;
+//│ $imp$Foo7 = function $imp$Foo(Impl, FooImpl2) {
+//│   let $imp$Foo8;
+//│   $imp$Foo8 = class $imp$Foo6 extends Impl {
+//│     static {
+//│       $imp$Foo8 = $imp$Foo6;
+//│       this.foo = FooImpl2.foo;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo8
+//│ };
+//│ Bar9 = class Bar8 {
+//│   constructor() {
+//│     let tmp2, tmp3;
+//│     tmp2 = runtime.safeCall(FooImpl1(globalThis.Object));
+//│     tmp3 = runtime.safeCall($imp$Foo7(globalThis.Object, tmp2));
+//│     this.Foo = runtime.safeCall(Foo1(tmp3));
+//│     this.FooImpl = runtime.safeCall(FooImpl1(globalThis.Object));
+//│   }
+//│   bar() {
+//│     return this.Foo.foo
+//│   }
+//│   toString() { return "Bar"; }
+//│ };
+//│ tmp1 = new Bar9();
+//│ runtime.safeCall(tmp1.bar())
+//│ = 1
 
 

@@ -1,7 +1,8 @@
 :js
 
 trait Pred with
-  fun foo(x) = x + 1
+  val y: Int
+  fun foo(x) = x + y
 
 :todo // should probably be compile error?
 :e
@@ -10,95 +11,51 @@ Pred.foo(1)
 
 :todo // finish lowering
 :rt
-trait Lel with
-  trait What with
-    require Lel
-    val y: String
-    implement Lel with
-      val x = 1
+trait Loo with
   require Pred
-  Pred.foo(1)
+  val f = Pred.foo(x)
   val x: Int
 //│ Resolved tree:
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       sym = trait:Lel
-//│       bsym = member:Lel
+//│       sym = trait:Loo
+//│       bsym = member:Loo
 //│       tparams = Nil
 //│       paramsOpt = N
 //│       auxParams = Nil
 //│       body = ObjBody of Blk:
 //│         stats = Ls of 
-//│           TraitDef:
-//│             sym = trait:What
-//│             bsym = member:What
-//│             tparams = Nil
-//│             paramsOpt = N
-//│             auxParams = Nil
-//│             body = ObjBody of Blk:
-//│               stats = Ls of 
-//│                 Require:
-//│                   sym = module:Lel
-//│                   mod = trait:Lel
-//│                   path = S of Ref{member:Lel} of member:Lel
-//│                 TermDefinition:
-//│                   owner = S of trait:What
-//│                   k = ImmutVal
-//│                   sym = member:y
-//│                   params = Nil
-//│                   tparams = N
-//│                   sign = S of Ref{member:String} of member:String
-//│                   body = N
-//│                   resSym = ‹result of member:y›
-//│                   flags = ()
-//│                   modulefulness = Modulefulness of N
-//│                   annotations = Nil
-//│                 TraitDef:
-//│                   sym = trait:$imp$Lel
-//│                   bsym = member:$imp$Lel
-//│                   tparams = Nil
-//│                   paramsOpt = N
-//│                   auxParams = Nil
-//│                   body = ObjBody of Blk:
-//│                     stats = Ls of 
-//│                       TermDefinition:
-//│                         owner = S of trait:$imp$Lel
-//│                         k = ImmutVal
-//│                         sym = member:x
-//│                         params = Nil
-//│                         tparams = N
-//│                         sign = N
-//│                         body = S of Lit of IntLit of 1
-//│                         resSym = ‹result of member:x›
-//│                         flags = ()
-//│                         modulefulness = Modulefulness of N
-//│                         annotations = Nil
-//│                     res = Lit of UnitLit of false
-//│                   kind = Imp
-//│                   annotations = Nil
-//│                   trt = Ref{member:Lel} of member:Lel
-//│               res = Lit of UnitLit of false
-//│             kind = Trt
-//│             annotations = Nil
-//│             trt = Ref{trait:What} of trait:What
 //│           Require:
 //│             sym = module:Pred
 //│             mod = trait:Pred
 //│             path = S of Ref{member:Pred} of member:Pred
-//│           App:
-//│             lhs = Sel{member:foo}:
-//│               prefix = SynthSel{trait:Pred}:
-//│                 prefix = Ref{trait:Lel} of trait:Lel
-//│                 nme = Ident of "Pred"
-//│               nme = Ident of "foo"
-//│             rhs = Tup of Ls of 
-//│               Fld:
-//│                 flags = ()
-//│                 term = Lit of IntLit of 1
-//│                 asc = N
 //│           TermDefinition:
-//│             owner = S of trait:Lel
+//│             owner = S of trait:Loo
+//│             k = ImmutVal
+//│             sym = member:f
+//│             params = Nil
+//│             tparams = N
+//│             sign = N
+//│             body = S of App:
+//│               lhs = Sel{member:foo}:
+//│                 prefix = SynthSel{trait:Pred}:
+//│                   prefix = Ref{trait:Loo} of trait:Loo
+//│                   nme = Ident of "Pred"
+//│                 nme = Ident of "foo"
+//│               rhs = Tup of Ls of 
+//│                 Fld:
+//│                   flags = ()
+//│                   term = SynthSel{member:x}:
+//│                     prefix = Ref{trait:Loo} of trait:Loo
+//│                     nme = Ident of "x"
+//│                   asc = N
+//│             resSym = ‹result of member:f›
+//│             flags = ()
+//│             modulefulness = Modulefulness of N
+//│             annotations = Nil
+//│           TermDefinition:
+//│             owner = S of trait:Loo
 //│             k = ImmutVal
 //│             sym = member:x
 //│             params = Nil
@@ -112,127 +69,50 @@ trait Lel with
 //│         res = Lit of UnitLit of false
 //│       kind = Trt
 //│       annotations = Nil
-//│       trt = Ref{trait:Lel} of trait:Lel
+//│       trt = Ref{trait:Loo} of trait:Loo
 //│   res = Lit of UnitLit of false
-
 
 :sjs
 class M with
-  require Lel
-  implement Lel with
-    fun f(x) = x
-    val x = 1
+  require Loo
+  implement Loo with
+    val x = 2
+  implement Pred with
+    val y = 2
 //│ JS (unsanitized):
-//│ let M1, $imp$Lel3;
+//│ let M1, $imp$Loo1, $imp$Pred1;
+//│ $imp$Loo1 = function $imp$Loo(Impl) {
+//│   let $imp$Loo2;
+//│   $imp$Loo2 = class $imp$Loo extends Impl {
+//│     static {
+//│       $imp$Loo2 = $imp$Loo;
+//│       this.x = 2;
+//│     }
+//│     static toString() { return "$imp$Loo"; }
+//│   };
+//│   return $imp$Loo2
+//│ };
+//│ $imp$Pred1 = function $imp$Pred(Impl) {
+//│   let $imp$Pred2;
+//│   $imp$Pred2 = class $imp$Pred extends Impl {
+//│     static {
+//│       $imp$Pred2 = $imp$Pred;
+//│       this.y = 2;
+//│     }
+//│     static toString() { return "$imp$Pred"; }
+//│   };
+//│   return $imp$Pred2
+//│ };
 //│ M1 = class M {
 //│   constructor() {
-//│     let tmp, tmp1;
-//│     tmp = runtime.safeCall($imp$Lel3(globalThis.Object));
-//│     tmp1 = runtime.safeCall(Pred1(globalThis.Object));
-//│     this.Lel = runtime.safeCall(Lel1(tmp, tmp1));
+//│     let tmp, tmp1, tmp2;
+//│     tmp = runtime.safeCall($imp$Loo1(globalThis.Object));
+//│     tmp1 = runtime.safeCall($imp$Pred1(globalThis.Object));
+//│     tmp2 = runtime.safeCall(Pred1(tmp1));
+//│     this.Loo = runtime.safeCall(Loo1(tmp, tmp2));
 //│   }
 //│   toString() { return "M"; }
 //│ };
-//│ $imp$Lel3 = function $imp$Lel(Impl) {
-//│   let $imp$Lel4;
-//│   $imp$Lel4 = class $imp$Lel2 extends Impl {
-//│     static {
-//│       $imp$Lel4 = $imp$Lel2;
-//│       this.x = 1;
-//│     }
-//│     static f(x) {
-//│       return x
-//│     }
-//│     static toString() { return "$imp$Lel"; }
-//│   };
-//│   return $imp$Lel4
-//│ };
 
-
-new M().Lel.f
-//│ = [function f]
-
-new M().Lel.f(1)
-//│ = 1
-
-
-:rt
-trait Lol with
-  require Lel
-  val x = 1
-  // val y = 2
-  implement Lel.Pred with
-    val l = 1
-    val r = 2
-//│ Resolved tree:
-//│ Blk:
-//│   stats = Ls of 
-//│     TraitDef:
-//│       sym = trait:Lol
-//│       bsym = member:Lol
-//│       tparams = Nil
-//│       paramsOpt = N
-//│       auxParams = Nil
-//│       body = ObjBody of Blk:
-//│         stats = Ls of 
-//│           Require:
-//│             sym = module:Lel
-//│             mod = trait:Lel
-//│             path = S of Ref{member:Lel} of member:Lel
-//│           TermDefinition:
-//│             owner = S of trait:Lol
-//│             k = ImmutVal
-//│             sym = member:x
-//│             params = Nil
-//│             tparams = N
-//│             sign = N
-//│             body = S of Lit of IntLit of 1
-//│             resSym = ‹result of member:x›
-//│             flags = ()
-//│             modulefulness = Modulefulness of N
-//│             annotations = Nil
-//│           TraitDef:
-//│             sym = trait:$imp$Lel$Pred
-//│             bsym = member:$imp$Lel$Pred
-//│             tparams = Nil
-//│             paramsOpt = N
-//│             auxParams = Nil
-//│             body = ObjBody of Blk:
-//│               stats = Ls of 
-//│                 TermDefinition:
-//│                   owner = S of trait:$imp$Lel$Pred
-//│                   k = ImmutVal
-//│                   sym = member:l
-//│                   params = Nil
-//│                   tparams = N
-//│                   sign = N
-//│                   body = S of Lit of IntLit of 1
-//│                   resSym = ‹result of member:l›
-//│                   flags = ()
-//│                   modulefulness = Modulefulness of N
-//│                   annotations = Nil
-//│                 TermDefinition:
-//│                   owner = S of trait:$imp$Lel$Pred
-//│                   k = ImmutVal
-//│                   sym = member:r
-//│                   params = Nil
-//│                   tparams = N
-//│                   sign = N
-//│                   body = S of Lit of IntLit of 2
-//│                   resSym = ‹result of member:r›
-//│                   flags = ()
-//│                   modulefulness = Modulefulness of N
-//│                   annotations = Nil
-//│               res = Lit of UnitLit of false
-//│             kind = Imp
-//│             annotations = Nil
-//│             trt = Sel{trait:Pred}:
-//│               prefix = Ref{member:Lel} of member:Lel
-//│               nme = Ident of "Pred"
-//│         res = Lit of UnitLit of false
-//│       kind = Trt
-//│       annotations = Nil
-//│       trt = Ref{trait:Lol} of trait:Lol
-//│   res = Lit of UnitLit of false
-
-
+new M().Loo.f
+//│ = 4

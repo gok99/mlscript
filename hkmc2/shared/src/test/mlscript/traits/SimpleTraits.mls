@@ -26,22 +26,83 @@ class Bar with
   require Foo
   implement Foo with
     val foo = 1
-  fun bar() = this.Foo.boo() // TODO also allow `Foo.boo()`
+  fun bar() = this.Foo.boo()
+  fun bar2() = Foo.boo()
 new Bar().bar()
 //│ = 10
 
+new Bar().bar2()
+//│ = 10
 
-trait Foo
+:sjs
+trait Lol with
+  val elem: Int
+//│ JS (unsanitized):
+//│ let Lol1;
+//│ Lol1 = function Lol(Impl) {
+//│   let Lol2;
+//│   Lol2 = class Lol extends Impl {
+//│     static {
+//│       Lol2 = Lol;
+//│     }
+//│     static toString() { return "Lol"; }
+//│   };
+//│   return Lol2
+//│ };
 
-:fixme
+:sjs
 class Bar with
   require Foo
+  require Lol
   val bar = 123
+  implement Lol with
+    val elem = 1
   implement Foo with
     val ok = "ok"
-    print(Bar.bar) // TODO reject
-new Bar().Foo.ok
-//│ ═══[RUNTIME ERROR] Error: Access to required field 'ok' yielded 'undefined'
-
+    fun foo = Lol.elem
+new Bar().Foo.foo
+//│ JS (unsanitized):
+//│ let Bar3, $imp$Lol1, $imp$Foo3, tmp2;
+//│ $imp$Lol1 = function $imp$Lol(Impl) {
+//│   let $imp$Lol2;
+//│   $imp$Lol2 = class $imp$Lol extends Impl {
+//│     static {
+//│       $imp$Lol2 = $imp$Lol;
+//│       this.elem = 1;
+//│     }
+//│     static toString() { return "$imp$Lol"; }
+//│   };
+//│   return $imp$Lol2
+//│ };
+//│ $imp$Foo3 = function $imp$Foo(Impl, Lol2) {
+//│   let $imp$Foo4;
+//│   $imp$Foo4 = class $imp$Foo2 extends Impl {
+//│     static {
+//│       $imp$Foo4 = $imp$Foo2;
+//│       this.ok = "ok";
+//│     }
+//│     static get foo() {
+//│       return Lol2.elem;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo4
+//│ };
+//│ Bar3 = class Bar2 {
+//│   constructor() {
+//│     let tmp3, tmp4, tmp5, tmp6;
+//│     tmp4 = runtime.safeCall($imp$Lol1(globalThis.Object));
+//│     tmp5 = runtime.safeCall(Lol1(tmp4));
+//│     tmp6 = runtime.safeCall($imp$Foo3(globalThis.Object, tmp5));
+//│     this.Foo = runtime.safeCall(Foo1(tmp6));
+//│     tmp3 = runtime.safeCall($imp$Lol1(globalThis.Object));
+//│     this.Lol = runtime.safeCall(Lol1(tmp3));
+//│     this.bar = 123;
+//│   }
+//│   toString() { return "Bar"; }
+//│ };
+//│ tmp2 = new Bar3();
+//│ tmp2.Foo.foo
+//│ = 1
 
 

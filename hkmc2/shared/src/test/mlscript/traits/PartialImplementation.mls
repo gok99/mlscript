@@ -1,6 +1,6 @@
 :js
 
-// :dl
+//  :dl
 :sjs
 trait Foo with
   val foo: Int
@@ -33,7 +33,6 @@ trait Bar with
   require Foo
   implement Foo with
     val foo = 1
-    // print(Foo.foo2)
   fun bar() = Foo.boo()
 
 :sjs
@@ -119,6 +118,19 @@ class Test with
   print(Baz.Bar.Foo.foo)
 //│ JS (unsanitized):
 //│ let Test1, $imp$Foo5;
+//│ $imp$Foo5 = function $imp$Foo(Impl) {
+//│   let $imp$Foo6;
+//│   $imp$Foo6 = class $imp$Foo4 extends Impl {
+//│     static {
+//│       $imp$Foo6 = $imp$Foo4;
+//│     }
+//│     static get loo() {
+//│       return 2;
+//│     }
+//│     static toString() { return "$imp$Foo"; }
+//│   };
+//│   return $imp$Foo6
+//│ };
 //│ Test1 = class Test {
 //│   constructor() {
 //│     let tmp, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
@@ -136,19 +148,6 @@ class Test with
 //│     Predef.print(this.Baz.Bar.Foo.foo)
 //│   }
 //│   toString() { return "Test"; }
-//│ };
-//│ $imp$Foo5 = function $imp$Foo(Impl) {
-//│   let $imp$Foo6;
-//│   $imp$Foo6 = class $imp$Foo4 extends Impl {
-//│     static {
-//│       $imp$Foo6 = $imp$Foo4;
-//│     }
-//│     static get loo() {
-//│       return 2;
-//│     }
-//│     static toString() { return "$imp$Foo"; }
-//│   };
-//│   return $imp$Foo6
 //│ };
 
 new Test().a

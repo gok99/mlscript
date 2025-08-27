@@ -1218,21 +1218,26 @@ extends Importer:
               ClassDef(owner, Cls, clsSym, sym, tps, pss, newOf(td), ObjBody(bod), annotations)
             clsSym.defn = S(cd)
             cd
-        case k : (Trt.type | Imp.type) =>
+        case k: Trt.type =>
+          val trtSym = td.symbol.asInstanceOf[TraitSymbol] // TODO: improve `asInstanceOf`         
+          val path = trtPathOpt.map(_._2).getOrElse(trtSym.ref())
+          newCtx.nestInner(trtSym).givenIn:
+            log(s"Processing type definition $nme")
+            val cd =
+              val (bod, c) = mkBody
+              TraitDef(trtSym, sym, tps, pss.headOption, pss.tailOr(Nil), ObjBody(bod), k, annotations, path)
+            trtSym.defn = S(cd)
+            cd
+        case k : Imp.type =>
           def getName(rslv: Term): Str = rslv match
             case Term.Ref(sym) => "$" ++ sym.nme
             case Term.Sel(p, Ident(nme)) => getName(p) ++ "$" ++ nme 
             case Term.SynthSel(p, Ident(nme)) => getName(p) ++ "$" ++ nme
             case _ => ""
-          val trtSym = k match
-            case Trt => td.symbol.asInstanceOf[TraitSymbol] // TODO: improve `asInstanceOf`
-            case Imp => TraitSymbol(td, Ident("$imp" + getName(trtPathOpt.get._2))) // TODO figure out this symbol resolution stuff
-          val bsym = k match
-            case Trt => sym
-            case Imp => BlockMemberSymbol(trtSym.nme, Nil, true)
-          
+          val trtSym = TraitSymbol(td, Ident("$imp" + getName(trtPathOpt.get._2))) // TODO figure out this symbol resolution stuff
+          val bsym = BlockMemberSymbol(trtSym.nme, Nil, true)
           val path = trtPathOpt.map(_._2).getOrElse(trtSym.ref())
-          newCtx.nestInner(trtSym).givenIn:
+          newCtx.parent.get.parent.get.nestInner(trtSym).givenIn: // TODO: fix
             log(s"Processing type definition $nme")
             val cd =
               val (bod, c) = mkBody

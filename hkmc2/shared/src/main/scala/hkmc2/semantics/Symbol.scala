@@ -300,15 +300,6 @@ class TraitSymbol(val tree: Tree.TypeDef, val id: Tree.Ident)(using State)
 
   override def subst(using sub: SymbolSubst): TraitSymbol = sub.mapTraitSym(this)
 
-// class RequireSymbol(val id: Tree.Ident, val requiredTrait: TraitSymbol)(using State)
-//     extends MemberSymbol[TraitDef] with InnerSymbol with NamedSymbol:
-//   def nme = id.name
-//   def name: Str = nme
-//   def toLoc: Option[Loc] = id.toLoc // TODO track source tree of require here
-//   override def toString: Str = s"require:${id.name}${State.dbgUid(uid)}:${requiredTrait.nme}"
-
-//   override def subst(using sub: SymbolSubst): RequireSymbol = sub.mapRequireSym(this)
-
 class TopLevelSymbol(blockNme: Str)(using State)
     extends MemberSymbol[ModuleDef] with InnerSymbol:
   def nme = blockNme

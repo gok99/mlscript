@@ -3,40 +3,26 @@
 
 trait Foo
 
-:fixme
+:e
 class Bar with
   require Foo
   val bar = 123
   implement Foo with
     print(bar) // TODO reject
-//│ /!!!\ Uncaught error: hkmc2.InternalError: `this` not in scope: class:Bar
+//│ ╔══[ERROR] Name not found: bar
+//│ ║  l.11: 	    print(bar) // TODO reject
+//│ ╙──      	          ^^^
 
+:e
 trait Bar with
   require Foo
   val bar = 123
   implement Foo with
-    fun foo = bar // TODO reject? not implementing anything
+    fun foo = 2 // TODO reject? not implementing anything
+//│ FAILURE: Unexpected lack of type error
 
 :fixme
 class C with
   require Bar
 new C().Bar.Foo.foo
 //│ ═══[RUNTIME ERROR] Error: Access to required field 'foo' yielded 'undefined'
-
-
-trait Foo with
-  fun foo: Int
-
-trait Bar with
-  require Foo
-  val bar = 123
-  implement Foo with
-    fun foo = bar // TODO reject: no access to `bar` here
-
-:fixme
-class C with
-  require Bar
-new C().Bar.Foo.foo
-//│ ═══[RUNTIME ERROR] ReferenceError: Bar4 is not defined
-
-

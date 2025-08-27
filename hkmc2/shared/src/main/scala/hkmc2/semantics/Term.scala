@@ -531,6 +531,8 @@ case class TraitDef(
   self =>
   val ext: Opt[New] = N
   val owner: Opt[InnerSymbol] = N
+  var deps: Set[TraitSymbol] = Set.empty
+  var impReqs: Set[Require] = Set.empty
 
 sealed abstract class ClassDef extends ClassLikeDef:
   val kind: ClsLikeKind

@@ -398,6 +398,7 @@ final case class TraitDefn(
     ctor: Block,
 ) extends Defn:
   val innerSym = S(isym)
+  var impReqs: Set[Require] = Set.empty
 
 final case class Handler(
     sym: BlockMemberSymbol,

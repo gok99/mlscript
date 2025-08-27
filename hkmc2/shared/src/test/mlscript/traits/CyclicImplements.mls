@@ -1,6 +1,41 @@
 :js
 
-// Should we support?
+// Trait-level cyclicity
+
+:sjs
+trait One with
+  require Two
+trait Two with
+  require One
+//│ JS (unsanitized):
+//│ let One1, Two1;
+//│ One1 = function One(Impl, Two2) {
+//│   let One2;
+//│   One2 = class One extends Impl {
+//│     static {
+//│       One2 = One;
+//│       One2.Two = Two2;
+//│     }
+//│     static toString() { return "One"; }
+//│   };
+//│   return One2
+//│ };
+//│ Two1 = function Two(Impl, One2) {
+//│   let Two2;
+//│   Two2 = class Two extends Impl {
+//│     static {
+//│       Two2 = Two;
+//│       Two2.One = One2;
+//│     }
+//│     static toString() { return "Two"; }
+//│   };
+//│   return Two2
+//│ };
+
+object Three with
+  require One
+//│ FAILURE: Unexpected exception
+//│ /!!!\ Uncaught error: java.lang.StackOverflowError
 
 trait Foo with
   val foo: Int
@@ -27,6 +62,20 @@ trait Baz with
     val foo = Bar.Foo.foo
     fun loo = 3
   fun tootoo() = Bar.Foo.too() + Bar2.Foo.too()
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: impls (TraitResolver.scala:125)
+//│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
+//│ ║  l.59: 	    val foo = 1
+//│ ║        	              ^
+//│ ║  l.60: 	    fun loo = Bar2.Foo.loo
+//│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: impls (TraitResolver.scala:125)
+//│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
+//│ ║  l.62: 	    val foo = Bar.Foo.foo
+//│ ║        	              ^^^^^^^^^^^
+//│ ║  l.63: 	    fun loo = 3
+//│ ╙──      	^^^^^^^^^^^^^^^
 //│ JS (unsanitized):
 //│ let Baz1, $imp$Bar$Foo1, $imp$Bar2$Foo1;
 //│ Baz1 = function Baz(Impl, Bar3, Bar22) {
@@ -55,7 +104,7 @@ trait Baz with
 //│       this.foo = 1;
 //│     }
 //│     static get loo() {
-//│       return Baz.Bar2.Foo.loo;
+//│       return Bar21.Foo.loo;
 //│     }
 //│     static toString() { return "$imp$Bar$Foo"; }
 //│   };
@@ -66,7 +115,7 @@ trait Baz with
 //│   $imp$Bar2$Foo2 = class $imp$Bar2$Foo extends Impl {
 //│     static {
 //│       $imp$Bar2$Foo2 = $imp$Bar2$Foo;
-//│       this.foo = Baz.Bar.Foo.foo;
+//│       this.foo = Bar1.Foo.foo;
 //│     }
 //│     static get loo() {
 //│       return 3;
@@ -75,27 +124,103 @@ trait Baz with
 //│   };
 //│   return $imp$Bar2$Foo2
 //│ };
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: impls (TraitResolver.scala:125)
+//│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
+//│ ║  l.59: 	    val foo = 1
+//│ ║        	              ^
+//│ ║  l.60: 	    fun loo = Bar2.Foo.loo
+//│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: impls (TraitResolver.scala:125)
+//│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
+//│ ║  l.62: 	    val foo = Bar.Foo.foo
+//│ ║        	              ^^^^^^^^^^^
+//│ ║  l.63: 	    fun loo = 3
+//│ ╙──      	^^^^^^^^^^^^^^^
 
-:fixme
+trait Bar with
+  require Foo
+  val bar: Int
+  fun bar() = Foo.boo()
+
+trait Bar2 with
+  require Foo
+  val bar2: Int
+  fun bar() = Foo.boo() + 1
+
+trait Baz with
+  require Bar
+  require Bar2
+  implement Bar with
+    val bar = Bar2.Foo.boo()
+  implement Bar2 with
+    val bar2 = Bar.Foo.boo() + 1
+
+:fixme // inter-impl dep cycle
 :sjs
 object Test with
   require Baz
-//│ JS (unsanitized):
-//│ let Test1;
-//│ const Test$class = class Test {
-//│   constructor() {
-//│     let tmp, tmp1, tmp2, tmp3, tmp4, tmp5;
-//│     tmp = runtime.safeCall($imp$Bar$Foo1(globalThis.Object));
-//│     tmp1 = runtime.safeCall(Foo1(tmp));
-//│     tmp2 = runtime.safeCall(Bar1(globalThis.Object, tmp1));
-//│     tmp3 = runtime.safeCall($imp$Bar2$Foo1(globalThis.Object));
-//│     tmp4 = runtime.safeCall(Foo1(tmp3));
-//│     tmp5 = runtime.safeCall(Bar21(globalThis.Object, tmp4));
-//│     this.Baz = runtime.safeCall(Baz1(globalThis.Object, tmp2, tmp5));
-//│   }
-//│   toString() { return "Test"; }
-//│ }; Test1 = new Test$class;
-//│ Test1.class = Test$class;
-//│ ═══[RUNTIME ERROR] ReferenceError: Baz is not defined
+  implement Foo with
+    val foo = 5
+    fun loo = 2
+//│ /!!!\ Uncaught error: java.lang.StackOverflowError
+
+// Member-level cyclicity
+
+trait A with
+  val a: Int
+  val b: Int
+  val c: Int
+
+:todo // want to allow?
+trait B with
+  require A
+  implement A with
+    val a = A.c
+//│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
+//│ ║  l.180: 	    val a = A.c
+//│ ╙──       	            ^^^
+
+:todo // want to allow?
+trait C with
+  require B
+  implement A with
+    val b = A.a
+//│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
+//│ ║  l.189: 	    val b = A.a
+//│ ╙──       	            ^^^
+
+:todo // should disallow - circular definition
+:e
+trait D with
+  require C
+  implement A with
+    val c = A.a
+//│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
+//│ ║  l.199: 	    val c = A.a
+//│ ╙──       	            ^^^
+
+trait E with
+  require C
+  implement A with
+    val b = 3
+
+:fixme
+object Final with
+  require E
+  val b = E.C.B.A.a === E.C.B.A.b && E.C.B.A.b === E.C.B.A.c && E.C.B.A.c === 3
+//│ ╔══[ERROR] Concrete Final does not implement all abstract members of trait A: c
+//│ ║  l.211: 	  require E
+//│ ║         	          ^
+//│ ║  l.212: 	  val b = E.C.B.A.a === E.C.B.A.b && E.C.B.A.b === E.C.B.A.c && E.C.B.A.c === 3
+//│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'a' yielded 'undefined'
+
+:fixme
+:expect true
+Final.b
+//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'b')
+//│ ═══[RUNTIME ERROR] Expected: 'true', got: 'undefined'
 
 

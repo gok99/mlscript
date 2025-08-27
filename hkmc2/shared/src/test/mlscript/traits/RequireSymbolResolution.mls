@@ -18,7 +18,6 @@ trait Lel with
 //│ Blk:
 //│   stats = Ls of 
 //│     TraitDef:
-//│       owner = N
 //│       sym = trait:Lel
 //│       bsym = member:Lel
 //│       tparams = Nil
@@ -84,21 +83,10 @@ trait Lel with
 //│             prefix = Ref{trait:Lel} of trait:Lel
 //│             nme = Ident of "T"
 //│           nme = Ident of "a"
+//│       kind = Trt
 //│       annotations = Nil
+//│       trt = Ref{trait:Lel} of trait:Lel
 //│   res = Lit of UnitLit of false
-//│ FAILURE: Unexpected runtime error
-//│ FAILURE LOCATION: mkQuery (JSBackendDiffMaker.scala:150)
-//│ ═══[RUNTIME ERROR] TypeError: Cannot read properties of undefined (reading 'foo')
-//│     at <static_initializer> (REPL11:1:331)
-//│     at REPL11:1:16
-//│     at ContextifyScript.runInThisContext (node:vm:137:12)
-//│     at REPLServer.defaultEval (node:repl:593:22)
-//│     at bound (node:domain:433:15)
-//│     at REPLServer.runBound [as eval] (node:domain:444:12)
-//│     at REPLServer.onLine (node:repl:922:10)
-//│     at REPLServer.emit (node:events:518:28)
-//│     at REPLServer.emit (node:domain:489:12)
-//│     at [_onLine] [as _onLine] (node:internal/readline/interface:419:12)
 
 
 // * Note: for the record:
@@ -136,8 +124,6 @@ class Parent with
 //│   toString() { return "Parent"; }
 //│ };
 
-
-
 module T
 
 // FIXME: bad error
@@ -147,12 +133,12 @@ require T
 //│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
 //│ 	at: scala.None$.get(Option.scala:627)
 //│ 	at: scala.None$.get(Option.scala:626)
-//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1066)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1057)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1261)
 //│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1261)
 //│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
-//│ 	at: hkmc2.semantics.Elaborator.topLevel(Elaborator.scala:1351)
+//│ 	at: hkmc2.semantics.Elaborator.topLevel(Elaborator.scala:1358)
 //│ 	at: hkmc2.MLsDiffMaker.processTrees(MLsDiffMaker.scala:246)
 //│ 	at: hkmc2.MLsDiffMaker.processOrigin(MLsDiffMaker.scala:227)
 
@@ -164,15 +150,13 @@ trait T2 with
 //│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
 //│ 	at: scala.None$.get(Option.scala:627)
 //│ 	at: scala.None$.get(Option.scala:626)
-//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1066)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1057)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1261)
 //│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1254)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1261)
 //│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
-//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1154)
-//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1147)
-//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1152)
-
-
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1145)
+//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1138)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1143)
 
 
