@@ -10,7 +10,7 @@ trait Two with
 trait Three with
   require One
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: rs (TraitResolver.scala:80)
+//│ FAILURE LOCATION: rs (TraitResolver.scala:49)
 //│ ╔══[ERROR] Trait One cannot require trait Two that (transitively) depends on One
 //│ ║  l.7: 	  require Two
 //│ ╙──     	          ^^^
@@ -50,17 +50,17 @@ trait Three with
 //│   return Three2
 //│ };
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: rs (TraitResolver.scala:80)
+//│ FAILURE LOCATION: rs (TraitResolver.scala:49)
 //│ ╔══[ERROR] Trait Three cannot require trait One that (transitively) depends on Three
 //│ ║  l.11: 	  require One
 //│ ╙──      	          ^^^
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: rs (TraitResolver.scala:80)
+//│ FAILURE LOCATION: rs (TraitResolver.scala:49)
 //│ ╔══[ERROR] Trait Two cannot require trait Three that (transitively) depends on Two
 //│ ║  l.9: 	  require Three
 //│ ╙──     	          ^^^^^
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: rs (TraitResolver.scala:80)
+//│ FAILURE LOCATION: rs (TraitResolver.scala:49)
 //│ ╔══[ERROR] Trait One cannot require trait Two that (transitively) depends on One
 //│ ║  l.7: 	  require Two
 //│ ╙──     	          ^^^
@@ -96,14 +96,14 @@ trait Baz with
     fun loo = 3
   fun tootoo() = Bar.Foo.too() + Bar2.Foo.too()
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: impls (TraitResolver.scala:129)
+//│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
 //│ ║  l.92: 	    val foo = 1
 //│ ║        	              ^
 //│ ║  l.93: 	    fun loo = Bar2.Foo.loo
 //│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: impls (TraitResolver.scala:129)
+//│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
 //│ ║  l.95: 	    val foo = Bar.Foo.foo
 //│ ║        	              ^^^^^^^^^^^
@@ -158,14 +158,14 @@ trait Baz with
 //│   return $imp$Bar2$Foo2
 //│ };
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: impls (TraitResolver.scala:129)
+//│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
 //│ ║  l.92: 	    val foo = 1
 //│ ║        	              ^
 //│ ║  l.93: 	    fun loo = Bar2.Foo.loo
 //│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: impls (TraitResolver.scala:129)
+//│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
 //│ ║  l.95: 	    val foo = Bar.Foo.foo
 //│ ║        	              ^^^^^^^^^^^
@@ -174,7 +174,7 @@ trait Baz with
 
 trait Bar with
   require Foo
-  val bar: Int
+  val bar1: Int
   fun bar() = Foo.boo()
 
 trait Bar2 with
@@ -185,10 +185,10 @@ trait Bar2 with
 trait Baz with
   require Bar
   require Bar2
-  implement Bar with
-    val bar = Bar2.Foo.boo()
   implement Bar2 with
     val bar2 = Bar.Foo.boo() + 1
+  implement Bar with
+    val bar1 = Bar2.Foo.boo()
 
 :fixme // inter-impl dep cycle
 :sjs
@@ -198,6 +198,7 @@ object Test with
     val foo = 5
     fun loo = 2
 //│ /!!!\ Uncaught error: java.lang.StackOverflowError
+
 
 // Member-level cyclicity
 
@@ -212,7 +213,7 @@ trait B with
   implement A with
     val a = A.c
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.213: 	    val a = A.c
+//│ ║  l.214: 	    val a = A.c
 //│ ╙──       	            ^^^
 
 :todo // want to allow?
@@ -221,7 +222,7 @@ trait C with
   implement A with
     val b = A.a
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.222: 	    val b = A.a
+//│ ║  l.223: 	    val b = A.a
 //│ ╙──       	            ^^^
 
 :todo // should disallow - circular definition
@@ -231,23 +232,18 @@ trait D with
   implement A with
     val c = A.a
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.232: 	    val c = A.a
+//│ ║  l.233: 	    val c = A.a
 //│ ╙──       	            ^^^
 
 trait E with
   require C
   implement A with
-    val b = 3
+    val c = 3
 
 :fixme
 object Final with
   require E
   val b = E.C.B.A.a === E.C.B.A.b && E.C.B.A.b === E.C.B.A.c && E.C.B.A.c === 3
-//│ ╔══[ERROR] Concrete Final does not implement all abstract members of trait A: c
-//│ ║  l.244: 	  require E
-//│ ║         	          ^
-//│ ║  l.245: 	  val b = E.C.B.A.a === E.C.B.A.b && E.C.B.A.b === E.C.B.A.c && E.C.B.A.c === 3
-//│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ═══[RUNTIME ERROR] Error: Access to required field 'a' yielded 'undefined'
 
 :fixme

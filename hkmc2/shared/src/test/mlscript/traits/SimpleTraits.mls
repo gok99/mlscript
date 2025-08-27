@@ -106,3 +106,9 @@ new Bar().Foo.foo
 //│ = 1
 
 
+:todo // why doesn't this error?
+:e
+trait A with
+  val a: Int
+  fun a() = 123
+

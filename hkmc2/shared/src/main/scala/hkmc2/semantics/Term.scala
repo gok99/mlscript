@@ -484,7 +484,8 @@ sealed abstract class ClassLikeDef extends TypeLikeDef:
   val ext: Opt[New]
   val body: ObjBody
   val annotations: Ls[Annot]
-  var abs: Opt[Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])]] = N
+  // trait path -> _, require that gave rise to this obligation, remaining abstracts, concretes
+  var abs: Opt[Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition], Ls[TermDefinition])]] = N
   def extraAnnotations: Ls[Annot] = annotations.filter:
     case Annot.Modifier(Keyword.`declare` | Keyword.`abstract` | Keyword.`data`) => false
     case _ => true

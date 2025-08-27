@@ -33,43 +33,12 @@ class TraitResolver(using Raise, TraceLogger, State):
 
   def getFreeReqsTerm(s: Term)(using FieldSymbol): Set[FieldSymbol] = s match
     case r: Term.Ref => r.sym.asClsOrModOrTrt.toSet.filter(s => s.isInstanceOf[TraitSymbol] || s == summon[FieldSymbol])
-    case a: Term.App => getFreeReqsTerm(a.lhs) ++ getFreeReqsTerm(a.rhs)
-    case ta: Term.TyApp => getFreeReqsTerm(ta.lhs) ++ ta.targs.flatMap(getFreeReqsTerm)
-    case s: Term.Sel => getFreeReqsTerm(s.prefix)
-    case s: Term.SynthSel => getFreeReqsTerm(s.prefix)
-    case s: Term.DynSel => getFreeReqsTerm(s.prefix)
-    case t: Term.Tup => t.fields.flatMap(f => f.subTerms.flatMap(getFreeReqsTerm)).toSet
-    case t: Term.CtxTup => t.fields.flatMap(f => f.subTerms.flatMap(getFreeReqsTerm)).toSet
-    case i: Term.IfLike => i.desugared.subTerms.flatMap(getFreeReqsTerm).toSet
-    case l: Term.Lam => l.body.subTerms.flatMap(getFreeReqsTerm).toSet
-    case f: Term.FunTy => f.lhs.subTerms.flatMap(getFreeReqsTerm).toSet ++ f.rhs.subTerms.flatMap(getFreeReqsTerm).toSet
-    case f: Term.Forall => f.body.subTerms.flatMap(getFreeReqsTerm).toSet
-    case w: Term.WildcardTy => w.in.toList.flatMap(getFreeReqsTerm).toSet ++ w.out.toList.flatMap(getFreeReqsTerm).toSet
-    case b: Term.Blk => b.stats.flatMap(getFreeReqsStatement).toSet ++ getFreeReqsTerm(b.res)
-    case r: Term.Rcd => r.stats.flatMap(getFreeReqsStatement).toSet
-    case q: Term.Quoted => getFreeReqsTerm(q.body)
-    case u: Term.Unquoted => getFreeReqsTerm(u.body)
-    case n: Term.New => getFreeReqsTerm(n.cls) ++ n.argss.flatten.flatMap(getFreeReqsTerm).toSet
-    case sp: Term.SelProj => getFreeReqsTerm(sp.prefix) ++ getFreeReqsTerm(sp.cls)
-    case a: Term.Asc => getFreeReqsTerm(a.term) ++ getFreeReqsTerm(a.ty)
-    case c: Term.CompType => getFreeReqsTerm(c.lhs) ++ getFreeReqsTerm(c.rhs)
-    case n: Term.Neg => getFreeReqsTerm(n.rhs)
-    case r: Term.Region => getFreeReqsTerm(r.body)
-    case r: Term.RegRef => getFreeReqsTerm(r.reg) ++ getFreeReqsTerm(r.value)
-    case a: Term.Assgn => getFreeReqsTerm(a.lhs) ++ getFreeReqsTerm(a.rhs)
-    case d: Term.Deref => getFreeReqsTerm(d.ref)
-    case s: Term.SetRef => getFreeReqsTerm(s.ref) ++ getFreeReqsTerm(s.value)
-    case r: Term.Ret => getFreeReqsTerm(r.result)
-    case t: Term.Throw => getFreeReqsTerm(t.result)
-    case t: Term.Try => getFreeReqsTerm(t.body) ++ getFreeReqsTerm(t.finallyDo)
-    case a: Term.Annotated => getFreeReqsTerm(a.target)
-    case h: Term.Handle => h.rhs.subTerms.flatMap(getFreeReqsTerm).toSet ++ h.args.flatMap(getFreeReqsTerm).toSet ++ getFreeReqsTerm(h.body)
-    case Term.Error | Term.UnitVal() | Term.Missing | Term.Lit(_) => Set.empty
+    case e => e.subTerms.toSet.flatMap(getFreeReqsTerm)
 
   def getFreeReqsStatement(s: Statement)(using FieldSymbol): Set[FieldSymbol] =
     s.subTerms.flatMap(getFreeReqsTerm).toSet
 
-  def getAbstracts(cls: ClassLikeDef): Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])] =
+  def getAbstracts(cls: ClassLikeDef): Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition], Ls[TermDefinition])] =
     var deps = Set.empty[TraitSymbol]
     val rs = cls.body.blk.stats.collect:
       case r: Require =>
@@ -81,25 +50,26 @@ class TraitResolver(using Raise, TraceLogger, State):
             msg"Trait ${cls.sym.nme} cannot require trait ${r.mod.nme} that (transitively) depends on ${cls.sym.nme}" -> r.toLoc :: Nil
         r
     val requires = rs
-    .foldLeft(Map.empty[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])]): (acc, r) =>
+    .foldLeft(Map.empty[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition], Ls[TermDefinition])]): (acc, r) =>
       val inherited = r.mod.defn.flatMap(_.abs).getOrElse(Map.empty)
       inherited.foldLeft(acc):
-        case (acc, (path, (implPath, or, abs))) =>
+        case (acc, (path, (implPath, or, abs, con))) =>
           val req: Opt[Require] = or match
             case Some(r) => Some(r)
             case None => Some(r)
           acc.updatedWith(cls.sym :: path):
-            case Some(implPath, N, abs) => Some(implPath, req, abs)
+            case Some(implPath, N, abs, con) => Some(implPath, req, abs, con)
             case Some(stuff) => Some(stuff) // is case be necessary?
-            case None => Some(implPath, req, abs)
+            case None => Some(implPath, req, abs, con)
     cls match
       case t: TraitDef => t.deps = t.deps ++ deps
       case _ =>
 
     tl.log(s"requires: ${requires.keys.mkString(", ")}")
 
-    val abstracts = cls.body.blk.stats.collect:
-      case td: TermDefinition if td.body is N => td
+    val (abstracts, concrete) = cls.body.blk.stats.collect:
+      case td: TermDefinition => td
+    .partition(_.body.isEmpty)
 
     val impls: Map[Ls[FieldSymbol], (Ls[TermDefinition], TraitDef)] = cls.body.blk.stats.collect:
       case p: TraitDef if p.kind == Imp =>
@@ -138,6 +108,8 @@ class TraitResolver(using Raise, TraceLogger, State):
         trmToPath(sel) -> (tds, p)
     .toMap
 
+    var unusedTraits = impls.values.map(_._2).toSet
+
     def findMostSpecificImpl(path: Ls[FieldSymbol]): Option[(Ls[TermDefinition], TraitDef)] =
       tl.log(s"Finding most specific impl for path: ${path}")
       if impls.contains(path)
@@ -145,28 +117,38 @@ class TraitResolver(using Raise, TraceLogger, State):
         else if path.tail.nonEmpty then findMostSpecificImpl(path.tail)
         else None
     def checkImplsSat(abs: TermDefinition)(imp: TermDefinition) = abs.sym.nme == imp.sym.nme
-    val updatedRequires: Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition])] = requires.foldLeft(Map.empty):
-      case (acc, (reqPath, (implPath, or, abs))) =>
+    val updatedRequires: Map[Ls[FieldSymbol], (Ls[TraitSymbol], Opt[Require], Ls[TermDefinition], Ls[TermDefinition])] = requires.foldLeft(Map.empty):
+      case (acc, (reqPath, (implPath, or, abs, con))) =>
         if abs.nonEmpty then
           val implOpt = findMostSpecificImpl(reqPath)
           val res = if implOpt.nonEmpty
           then
             tl.log(s"Found impl for ${reqPath.mkString(".")}: ${implOpt.get._2.sym.nme}")
             val (tds, implTrait) = implOpt.get
-            val filtered = abs.filterNot(td => tds.exists(checkImplsSat(td)))
-            (or, filtered) match
-              case (S(r), Nil) => 
-                tl.log(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
-                r.implPath = (implTrait.sym :: implPath).reverse
-              case _ => 
-            (implTrait.sym :: implPath, or, filtered)
-          else (implPath, or, abs)
+            if tds.exists(imp => con.exists(crt => imp.sym.nme == crt.sym.nme))
+            then // does not implement homogenously, skip
+              (implPath, or, abs, con)
+            else
+              val filtered = abs.filterNot(td => tds.exists(checkImplsSat(td)))
+              unusedTraits = unusedTraits - implTrait
+              (or, filtered) match
+                case (S(r), Nil) => 
+                  tl.log(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
+                  r.implPath = (implTrait.sym :: implPath).reverse
+                case _ => 
+              (implTrait.sym :: implPath, or, filtered, con ++ tds)
+          else (implPath, or, abs, con)
           acc.updated(reqPath, res)
-        else acc.updated(reqPath, (implPath, or, abs))
+        else acc.updated(reqPath, (implPath, or, abs, con))
+
+    unusedTraits.foreach: t =>
+      raise:
+        ErrorReport:
+          msg"Trait ${t.sym.nme} is unused" -> t.toLoc :: Nil
 
     cls match
       case t: TraitDef =>
-        val value = (Nil, N, abstracts)
+        val value = (Nil, N, abstracts, concrete)
         updatedRequires.updated(cls.sym.asTrt.get :: Nil, value)
       case _ => updatedRequires
 
@@ -179,7 +161,7 @@ class TraitResolver(using Raise, TraceLogger, State):
       case t: TraitDef =>
       case _ =>
         ownAbstracts.foreach:
-          case (ts, (td, _, abs)) =>
+          case (ts, (td, _, abs, con)) =>
             if abs.nonEmpty then
               raise:
                 ErrorReport:

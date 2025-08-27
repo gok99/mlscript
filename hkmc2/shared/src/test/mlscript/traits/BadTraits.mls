@@ -1,5 +1,14 @@
 :js
 
+trait Foo with
+  val x: Int
+
+:e
+module Foo2 with
+  require Foo
+//│ ╔══[ERROR] Concrete Foo2 does not implement all abstract members of trait Foo: x
+//│ ║  l.8: 	  require Foo
+//│ ╙──     	          ^^^
 
 trait Foo
 
@@ -8,10 +17,13 @@ class Bar with
   require Foo
   val bar = 123
   implement Foo with
-    print(bar) // TODO reject
+    print(bar)
 //│ ╔══[ERROR] Name not found: bar
-//│ ║  l.11: 	    print(bar) // TODO reject
+//│ ║  l.20: 	    print(bar)
 //│ ╙──      	          ^^^
+//│ ╔══[ERROR] Trait $imp$Foo is unused
+//│ ║  l.20: 	    print(bar)
+//│ ╙──      	    ^^^^^^^^^^
 
 :e
 trait Bar with
@@ -19,10 +31,63 @@ trait Bar with
   val bar = 123
   implement Foo with
     fun foo = 2 // TODO reject? not implementing anything
-//│ FAILURE: Unexpected lack of type error
+//│ ╔══[ERROR] Trait $imp$Foo is unused
+//│ ║  l.33: 	    fun foo = 2 // TODO reject? not implementing anything
+//│ ╙──      	              ^
 
 :fixme
 class C with
   require Bar
 new C().Bar.Foo.foo
 //│ ═══[RUNTIME ERROR] Error: Access to required field 'foo' yielded 'undefined'
+
+trait Foo with
+  fun foo: Int
+
+trait Bar with
+  require Foo
+  val bar = 123
+  implement Foo with
+    fun foo = bar // TODO reject: no access to `bar` here
+    print(Bar.bar)
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: subterm (Elaborator.scala:421)
+//│ ╔══[ERROR] Name not found: bar
+//│ ║  l.51: 	    fun foo = bar // TODO reject: no access to `bar` here
+//│ ╙──      	              ^^^
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: impls (TraitResolver.scala:99)
+//│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
+//│ ║  l.52: 	    print(Bar.bar)
+//│ ╙──      	    ^^^^^^^^^^^^^^
+
+:fixme
+class C with
+  require Bar
+new C().Bar.Foo.foo
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'bar' yielded 'undefined'
+
+trait A with
+  val a: Int
+  val b: Int
+
+trait B with
+  require A
+  implement A with
+    val a = 1
+
+// todo: improve error message
+trait C with
+  require B
+  implement A with
+    val a = 2
+    val b = 1
+//│ FAILURE: Unexpected type error
+//│ FAILURE LOCATION: getAbstracts (TraitResolver.scala:146)
+//│ ╔══[ERROR] Trait $imp$A is unused
+//│ ║  l.83: 	    val a = 2
+//│ ║        	            ^
+//│ ║  l.84: 	    val b = 1
+//│ ╙──      	^^^^^^^^^^^^^
+
+
