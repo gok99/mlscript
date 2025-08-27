@@ -104,59 +104,59 @@ Bar.foo()
 //│ ╙──       	   ^^^^
 //│ ═══[RUNTIME ERROR] TypeError: Bar7.foo is not a function
 
-
+:fixme
 :sjs
 class Bar with
   require Foo
   require FooImpl
   implement Foo with FooImpl // TODO: to implement
-  implement Foo with
-    val foo = FooImpl.foo
-  fun bar() = Foo.foo
+  fun bar() = this.FooImpl.boo()
 new Bar().bar()
-//│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: mkBody (Elaborator.scala:1147)
 //│ ╔══[ERROR] Illegal body of implement definition (should be a block; found identifier).
 //│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
 //│ ╙──       	                     ^^^^^^^
+//│ ╔══[ERROR] Concrete Bar does not implement all abstract members of trait Foo: foo
+//│ ║  l.110: 	  require Foo
+//│ ║         	          ^^^
+//│ ║  l.111: 	  require FooImpl
+//│ ║         	^^^^^^^^^^^^^^^^^
+//│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
+//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ║  l.113: 	  fun bar() = this.FooImpl.boo()
+//│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ JS (unsanitized):
-//│ let Bar9, $imp$Foo8, $imp$Foo9, tmp1;
-//│ $imp$Foo8 = function $imp$Foo(Impl) {
-//│   let $imp$Foo10;
-//│   $imp$Foo10 = class $imp$Foo6 extends Impl {
+//│ let Bar9, $imp$Foo7, tmp1;
+//│ $imp$Foo7 = function $imp$Foo(Impl) {
+//│   let $imp$Foo8;
+//│   $imp$Foo8 = class $imp$Foo6 extends Impl {
 //│     static {
-//│       $imp$Foo10 = $imp$Foo6;
+//│       $imp$Foo8 = $imp$Foo6;
 //│     }
 //│     static toString() { return "$imp$Foo"; }
 //│   };
-//│   return $imp$Foo10
-//│ };
-//│ $imp$Foo9 = function $imp$Foo(Impl, FooImpl2) {
-//│   let $imp$Foo10;
-//│   $imp$Foo10 = class $imp$Foo7 extends Impl {
-//│     static {
-//│       $imp$Foo10 = $imp$Foo7;
-//│       this.foo = FooImpl2.foo;
-//│     }
-//│     static toString() { return "$imp$Foo"; }
-//│   };
-//│   return $imp$Foo10
+//│   return $imp$Foo8
 //│ };
 //│ Bar9 = class Bar8 {
 //│   constructor() {
-//│     let tmp2, tmp3;
-//│     tmp2 = runtime.safeCall(FooImpl1(globalThis.Object));
-//│     tmp3 = runtime.safeCall($imp$Foo9(globalThis.Object, tmp2));
-//│     this.Foo = runtime.safeCall(Foo1(tmp3));
+//│     this.Foo = runtime.safeCall(Foo1(globalThis.Object));
 //│     this.FooImpl = runtime.safeCall(FooImpl1(globalThis.Object));
 //│   }
 //│   bar() {
-//│     return this.Foo.foo
+//│     return runtime.safeCall(this.FooImpl.boo())
 //│   }
 //│   toString() { return "Bar"; }
 //│ };
 //│ tmp1 = new Bar9();
 //│ runtime.safeCall(tmp1.bar())
-//│ = 1
+//│ ╔══[ERROR] Concrete Bar does not implement all abstract members of trait Foo: foo
+//│ ║  l.110: 	  require Foo
+//│ ║         	          ^^^
+//│ ║  l.111: 	  require FooImpl
+//│ ║         	^^^^^^^^^^^^^^^^^
+//│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
+//│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ║  l.113: 	  fun bar() = this.FooImpl.boo()
+//│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ═══[RUNTIME ERROR] TypeError: selRes.boo is not a function
 
 
