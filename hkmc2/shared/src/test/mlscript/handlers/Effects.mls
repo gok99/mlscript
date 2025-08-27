@@ -169,13 +169,11 @@ if true do
 //│         return arg
 //│       })
 //│     }
-//│     toString() { return "Handler$h$"; }
+//│     toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["class", "Handler$h$"]; 
 //│   };
 //│   h = new Handler$h$12();
-//│   Cont$handleBlock$h$11 = function Cont$handleBlock$h$(pc1) {
-//│     return new Cont$handleBlock$h$.class(pc1);
-//│   };
-//│   Cont$handleBlock$h$11.class = class Cont$handleBlock$h$10 extends runtime.FunctionContFrame.class {
+//│   Cont$handleBlock$h$11 = class Cont$handleBlock$h$10 extends runtime.FunctionContFrame.class {
 //│     constructor(pc) {
 //│       let tmp12;
 //│       tmp12 = super(null);
@@ -187,7 +185,7 @@ if true do
 //│       }
 //│       contLoop: while (true) {
 //│         if (this.pc === 1) {
-//│           break contLoop;
+//│           break contLoop
 //│         } else if (this.pc === 2) {
 //│           res = f();
 //│           if (res instanceof runtime.EffectSig.class) {
@@ -197,14 +195,15 @@ if true do
 //│             return res
 //│           }
 //│           this.pc = 0;
-//│           continue contLoop;
+//│           continue contLoop
 //│         } else if (this.pc === 0) {
 //│           return res
 //│         }
 //│         break;
 //│       }
 //│     }
-//│     toString() { return "Cont$handleBlock$h$(" + runtime.render(this.pc) + ")"; }
+//│     toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["class", "Cont$handleBlock$h$"]; 
 //│   };
 //│   f = function f() {
 //│     return 3
@@ -213,7 +212,7 @@ if true do
 //│   if (scrut === true) {
 //│     res = f();
 //│     if (res instanceof runtime.EffectSig.class) {
-//│       res.contTrace.last.next = Cont$handleBlock$h$11(0);
+//│       res.contTrace.last.next = new Cont$handleBlock$h$11(0);
 //│       return runtime.handleBlockImpl(res, h)
 //│     }
 //│     return res

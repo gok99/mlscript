@@ -29,6 +29,7 @@ object Printer:
         case Case.Lit(lit) => doc"${lit.idStr}"
         case Case.Cls(cls, path) => doc"${cls.nme}"
         case Case.Tup(len, inf) => doc"tuple$len"
+        case _ => TODO(c)
       val docCases = arms
         .map{ case (c, b) => doc"${case_doc(c)} => #{  # ${mkDocument(b)} #} " }
         .mkDocument(sep = doc" # ")
@@ -52,19 +53,19 @@ object Printer:
       doc"set $docLhs = ${mkDocument(rhs)} in # ${mkDocument(rest)}"
     case AssignField(lhs, nme, rhs, rest) =>
       doc"set ${mkDocument(lhs)}.${nme.name} = ${mkDocument(rhs)} in # ${mkDocument(rest)}"
-    case Define(defn, rest) => {
+    case Define(defn, rest) =>
       doc"define ${mkDocument(defn)} in # ${mkDocument(rest)}"
-    }
     case End("") => doc"end"
     case End(msg) => doc"end ${msg}"
+    case _ => TODO(blk)
   
   def mkDocument(defn: Defn)(using Raise, Scope): Document = defn match
     case FunDefn(own, sym, params, body) =>
       val docParams = doc"${own.fold("")(_.toString+"::")}${params.map(_.params.map(x => summon[Scope].allocateName(x.sym)).mkString("(", ", ", ")")).mkString}"
       val docBody = mkDocument(body)
       doc"fun ${sym.nme}${docParams} { #{  # ${docBody} #}  # }"
-    case ValDefn(owner, k, sym, rhs) =>
-      doc"val ${sym.nme} = ${mkDocument(rhs)}"
+    case ValDefn(tsym, sym, rhs) =>
+      doc"val ${tsym.nme} = ${mkDocument(rhs)}"
     case ClsLikeDefn(own, _, sym, k, paramsOpt, auxParams, parentSym, methods, privateFields, publicFields, preCtor, ctor) =>
       def optFldBody(t: semantics.TermDefinition) =
         t.body match
@@ -74,7 +75,7 @@ object Printer:
       val auxClsParams = auxParams.flatMap(_.paramSyms)
       val ctorParams = (clsParams ++ auxClsParams).map(p => summon[Scope].allocateName(p))
       val privFields = privateFields.map(x => doc"let ${x.id.name} = ...").mkDocument(sep = doc" # ")
-      val pubFields = publicFields.map(x => doc"${x.nme}").mkDocument(sep = doc" # ")
+      val pubFields = publicFields.map(x => doc"${x._1.nme}").mkDocument(sep = doc" # ")
       val docPrivFlds = if privateFields.isEmpty then doc"" else doc" # ${privFields}"
       val docPubFlds = if publicFields.isEmpty then doc"" else doc" # ${pubFields}"
       val docBody = if publicFields.isEmpty && privateFields.isEmpty then doc"" else doc" { #{ ${docPrivFlds}${docPubFlds} #}  # }"
@@ -94,11 +95,11 @@ object Printer:
     case Value.Lam(params, body) =>
       val docParams = params.params.map(x => summon[Scope].allocateName(x.sym)).mkString(", ")
       doc"(${docParams}) => ${mkDocument(body)}"
-    case Value.Arr(elems) =>
+    case Value.Arr(mut, elems) =>
       val docElems = elems.map(x => mkDocument(x)).mkString(", ")
-      doc"[${docElems}]"
-    case Value.Rcd(args) =>
-      doc"{ ${
+      doc"${if mut then "mut " else ""}[${docElems}]"
+    case Value.Rcd(mut, args) =>
+      doc"${if mut then "mut " else ""}{ ${
         args.map(x => x.idx.fold(doc"...")(p => mkDocument(p) :: ": ") :: mkDocument(x.value)).mkString(", ")
       } }"
   
@@ -107,16 +108,18 @@ object Printer:
       val docQual = mkDocument(qual)
       doc"${docQual}.${name.name}"
     case x: Value => mkDocument(x)
+    case _ => TODO(path)
 
   def mkDocument(result: Result)(using Raise, Scope): Document = result match
     case Call(fun, args) => doc"${mkDocument(fun)}(${args.map(mkDocument).mkString(", ")})"
-    case Instantiate(cls, args) => doc"new ${mkDocument(cls)}(${args.map(mkDocument).mkString(", ")})"
+    case Instantiate(mut, cls, args) =>
+      doc"new ${if mut then "mut " else ""}${mkDocument(cls)}(${args.map(mkDocument).mkString(", ")})"
     case x: Path => mkDocument(x)
   
-  def mkDocument(prog: Program)(using Raise, Scope): Document = {
+  def mkDocument(prog: Program)(using Raise, Scope): Document = summon[Scope].nest.givenIn:
     val docImports = prog.imports.map:
       case (local, path) =>
         val docLocal = summon[Scope].allocateName(local)
         doc"import ${docLocal}"
     doc" ${docImports.mkDocument(sep = doc" # ")} # ${mkDocument(prog.main)}"
-  }
+  

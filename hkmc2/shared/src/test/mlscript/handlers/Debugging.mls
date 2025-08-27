@@ -21,7 +21,7 @@ fun f() =
 //│ getLocals2 = function getLocals() {
 //│   let prev, thisInfo, tmp;
 //│   prev = [];
-//│   thisInfo = new runtime.FnLocalsInfo.class("\u2039top level\u203A", []);
+//│   thisInfo = new runtime.FnLocalsInfo.class("\u2039top level\u203A", globalThis.Object.freeze([]));
 //│   tmp = runtime.safeCall(prev.push(thisInfo));
 //│   return prev
 //│ };
@@ -33,18 +33,15 @@ fun f() =
 //│     i1 = new runtime.LocalVarInfo.class("i", i);
 //│     j1 = new runtime.LocalVarInfo.class("j", j);
 //│     k1 = new runtime.LocalVarInfo.class("k", k);
-//│     thisInfo = new runtime.FnLocalsInfo.class("f", [
+//│     thisInfo = new runtime.FnLocalsInfo.class("f", globalThis.Object.freeze([
 //│       i1,
 //│       j1,
 //│       k1
-//│     ]);
+//│     ]));
 //│     tmp2 = runtime.safeCall(prev.push(thisInfo));
 //│     return prev
 //│   };
-//│   Cont$func$f$1 = function Cont$func$f$(pc1) {
-//│     return new Cont$func$f$.class(pc1);
-//│   };
-//│   Cont$func$f$1.class = class Cont$func$f$ extends runtime.FunctionContFrame.class {
+//│   Cont$func$f$1 = class Cont$func$f$ extends runtime.FunctionContFrame.class {
 //│     constructor(pc) {
 //│       let tmp2;
 //│       tmp2 = super(null);
@@ -68,7 +65,7 @@ fun f() =
 //│             return tmp1
 //│           }
 //│           this.pc = 1;
-//│           continue contLoop;
+//│           continue contLoop
 //│         } else if (this.pc === 4) {
 //│           tmp = Predef.raiseUnhandledEffect();
 //│           if (tmp instanceof runtime.EffectSig.class) {
@@ -78,13 +75,13 @@ fun f() =
 //│             return tmp
 //│           }
 //│           this.pc = 0;
-//│           continue contLoop;
+//│           continue contLoop
 //│         } else if (this.pc === 0) {
 //│           this.pc = 3;
-//│           continue contLoop;
+//│           continue contLoop
 //│         } else if (this.pc === 1) {
 //│           this.pc = 2;
-//│           continue contLoop;
+//│           continue contLoop
 //│         }
 //│         break;
 //│       }
@@ -99,7 +96,8 @@ fun f() =
 //│         return "Debugging.mls:17:5"
 //│       }
 //│     }
-//│     toString() { return "Cont$func$f$(" + runtime.render(this.pc) + ")"; }
+//│     toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["class", "Cont$func$f$"]; 
 //│   };
 //│   i = 0;
 //│   j = 100;
@@ -108,19 +106,17 @@ fun f() =
 //│   if (scrut === true) {
 //│     tmp = Predef.raiseUnhandledEffect();
 //│     if (tmp instanceof runtime.EffectSig.class) {
-//│       tmp.contTrace.last.next = new Cont$func$f$1.class(0);
+//│       tmp.contTrace.last.next = new Cont$func$f$1(0);
 //│       tmp.contTrace.last = tmp.contTrace.last.next;
 //│       return tmp
 //│     }
 //│     tmp1 = Predef.print(tmp);
 //│     if (tmp1 instanceof runtime.EffectSig.class) {
-//│       tmp1.contTrace.last.next = new Cont$func$f$1.class(1);
+//│       tmp1.contTrace.last.next = new Cont$func$f$1(1);
 //│       tmp1.contTrace.last = tmp1.contTrace.last.next;
 //│       return tmp1
 //│     }
-//│   } else {
-//│     tmp1 = runtime.Unit;
-//│   }
+//│   } else { tmp1 = runtime.Unit; }
 //│   return j / i
 //│ };
 
@@ -137,8 +133,8 @@ lambda_test(() =>
   raiseUnhandledEffect()
   100)
 //│ ═══[RUNTIME ERROR] Error: Unhandled effect FatalEffect
-//│ 	at lambda (Debugging.mls:137:3)
-//│ 	at lambda_test (Debugging.mls:134:3)
+//│ 	at lambda (Debugging.mls:133:3)
+//│ 	at lambda_test (Debugging.mls:130:3)
 
 
 import "../../mlscript-compile/Runtime.mls"
@@ -147,7 +143,13 @@ import "../../mlscript-compile/Runtime.mls"
 let res = Runtime.try(f)
 
 res.reified.contTrace.next.getLocals
-//│ = [FnLocalsInfo("‹top level›", []), FnLocalsInfo("f", [LocalVarInfo("i", 0), LocalVarInfo("j", 100), LocalVarInfo("k", 2000)])]
+//│ = [
+//│   FnLocalsInfo("‹top level›", []),
+//│   FnLocalsInfo(
+//│     "f",
+//│     [LocalVarInfo("i", 0), LocalVarInfo("j", 100), LocalVarInfo("k", 2000)]
+//│   )
+//│ ]
 
 Runtime.debugEff(res.reified)
 //│ > Debug EffectSig:
@@ -182,7 +184,7 @@ let res =
     fun break(payload)(resume) = resume
   using Debugger = h
   Runtime.try(() => Test.main())
-//│ res = EffectHandle()
+//│ res = EffectHandle(_)
 
 :re
 res.raise()
@@ -211,9 +213,9 @@ fun f() =
 f()
 //│ > [FnLocalsInfo("‹top level›", [LocalVarInfo("i", 100)]), FnLocalsInfo("f", [LocalVarInfo("j", 200)])]
 //│ > Stack Trace:
-//│ > 	at f (Debugging.mls:204:3) with locals: j=200
+//│ > 	at f (Debugging.mls:206:3) with locals: j=200
 //│ > Stack Trace:
-//│ > 	at f (Debugging.mls:206:3)
+//│ > 	at f (Debugging.mls:208:3)
 //│ > Stack Trace:
-//│ > 	at f (Debugging.mls:207:3) with locals: j=300
+//│ > 	at f (Debugging.mls:209:3) with locals: j=300
 //│ > [FnLocalsInfo("‹top level›", [LocalVarInfo("i", 100)]), FnLocalsInfo("f", [LocalVarInfo("j", 300)])]

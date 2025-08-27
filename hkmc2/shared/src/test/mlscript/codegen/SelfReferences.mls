@@ -11,35 +11,38 @@ module Foo with
 //│     Foo1 = Foo;
 //│     this.self = Foo1;
 //│   }
-//│   static toString() { return "Foo"; }
+//│   static toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["module", "Foo"]; 
 //│ });
 
 Foo.self
-//│ = Foo
+//│ = module Foo { self: ref'1 } as ref'1
 
 
 module Foo with
   val self: module Foo = this
 
 Foo.self
-//│ = Foo
+//│ = module Foo { self: ref'1 } as ref'1
 
 
 :e
 module Foo with
   val self = this
 //│ ╔══[ERROR] Unexpected moduleful reference.
+//│ ║  l.31: 	  val self = this
+//│ ║        	             ^^^^
 //│ ╙── Value must be marked as returning a 'module' in order to return a module.
 
 Foo.self
-//│ = Foo
+//│ = module Foo { self: ref'1 } as ref'1
 
 
 object Foo with
   val self = this
 
 Foo.self
-//│ = Foo
+//│ = Foo { self: ref'1, class: object Foo } as ref'1
 
 
 :todo // * Initialization error
@@ -51,10 +54,13 @@ object Foo with
 //│ const Foo$class1 = class Foo8 {
 //│   constructor() {
 //│     this.self = Foo9;
+//│     Object.defineProperty(this, "class", {
+//│       value: Foo8
+//│     })
 //│   }
-//│   toString() { return "Foo"; }
-//│ }; Foo9 = new Foo$class1;
-//│ Foo9.class = Foo$class1;
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["object", "Foo"]; 
+//│ }; Foo9 = globalThis.Object.freeze(new Foo$class1);
 
 :re
 Foo.self

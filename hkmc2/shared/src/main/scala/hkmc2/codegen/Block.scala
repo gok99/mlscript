@@ -37,10 +37,10 @@ sealed abstract class Block extends Product with AutoLocated:
     case AssignField(lhs: Path, nme: Tree.Ident, rhs: Result, rest: Block) => lhs :: nme :: rhs :: rest :: Nil
     case AssignDynField(lhs, fld, arrayIdx, rhs, rest) => lhs :: fld :: rhs :: rest :: Nil
     case Define(FunDefn(owner, sym, params, body), rest) => sym :: (params :+ body :+ rest)
-    case Define(ValDefn(owner, k, sym, rhs), rest) => sym :: rhs :: rest :: Nil
+    case Define(ValDefn(tsym, sym, rhs), rest) => tsym :: sym :: rhs :: rest :: Nil
     case Define(ClsLikeDefn(owner, isym, sym, k, paramsOpt, aux, parentSym, methods, privFlds, pubFlds, preCtor, ctor), rest) =>
-      isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++ privFlds ++ pubFlds
-      ++ preCtor.subBlocks ++ ctor.subBlocks :+ rest
+      isym :: sym :: paramsOpt.toList ++ aux ++ parentSym.toList ++ methods.flatMap(_.subBlocks) ++
+        privFlds ++ pubFlds.flatMap(f => f._1 :: f._2 :: Nil) ++ preCtor.subBlocks ++ ctor.subBlocks :+ rest
     case HandleBlock(lhs, res, par, args, cls, handlers, body, rest) =>
       lhs :: res :: par :: args ++ handlers.flatMap: handler =>
         handler.sym :: handler.resumeSym :: (handler.params :+ handler.body)
@@ -241,9 +241,13 @@ sealed abstract class Block extends Product with AutoLocated:
         case c: ClsLikeDefn =>
           val newPreCtor = c.preCtor.flattened
           val newCtor = c.ctor.flattened
-          if (newPreCtor is c.preCtor) && (newCtor is c.ctor)
+          val newMethods = c.methods.mapConserve:
+            case f@FunDefn(owner, sym, params, body) =>
+              val newBody = body.flattened
+              if newBody is body then f else f.copy(body = newBody)
+          if (newPreCtor is c.preCtor) && (newCtor is c.ctor) && (newMethods is c.methods)
           then c
-          else c.copy(preCtor = newPreCtor, ctor = newCtor)
+          else c.copy(preCtor = newPreCtor, ctor = newCtor, methods = newMethods)
         case c: TraitDefn =>
           val newCtor = c.ctor.flattened
           if (newCtor is c.ctor)
@@ -336,7 +340,7 @@ sealed abstract class Defn:
   // * in the type system.
   lazy val freeVars: Set[Local] = this match
     case FunDefn(own, sym, params, body) => body.freeVars -- params.flatMap(_.paramSyms) - sym
-    case ValDefn(owner, k, sym, rhs) => rhs.freeVars
+    case ValDefn(tsym, sym, rhs) => rhs.freeVars
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
         methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVars
@@ -345,7 +349,7 @@ sealed abstract class Defn:
   
   lazy val freeVarsLLIR: Set[Local] = this match
     case FunDefn(own, sym, params, body) => body.freeVarsLLIR -- params.flatMap(_.paramSyms) - sym
-    case ValDefn(owner, k, sym, rhs) => rhs.freeVarsLLIR
+    case ValDefn(tsym, sym, rhs) => rhs.freeVarsLLIR
     case ClsLikeDefn(own, isym, sym, k, paramsOpt, auxParams, parentSym, 
         methods, privateFields, publicFields, preCtor, ctor) =>
       preCtor.freeVarsLLIR
@@ -361,13 +365,56 @@ final case class FunDefn(
   val innerSym = N
 
 final case class ValDefn(
-    owner: Opt[InnerSymbol],
-    k: syntax.Val,
+    tsym: TermSymbol,
     sym: BlockMemberSymbol,
     rhs: Path,
 ) extends Defn:
-  val innerSym = N
+  val innerSym = S(tsym)
+  val k = tsym.k
+  val owner: Opt[InnerSymbol] = tsym.owner
 
+object ValDefn:
+  def mk(
+      owner: Opt[InnerSymbol],
+      k: syntax.Val,
+      sym: BlockMemberSymbol,
+      rhs: Path,
+    )(using State)
+    : ValDefn =
+      ValDefn(tsym = TermSymbol(k, owner, Tree.Ident(sym.nme)), sym = sym, rhs = rhs)
+
+/*
+  This explains the difference between paramsOpt, auxParams, privateFields and publicFields.
+  
+  paramsOpt is the main parameter list of a class, i.e. in `class A(plist0)`, `plist0` will be in paramsOpt.
+  If there is no such parameter list, for example `class A`, then paramsOpt will be None.
+  
+  auxParams are the secondary parameter lists, and in the future, will be defined using the syntax
+  
+  class A with
+    constructor(plist1)(plist2) = ...
+  
+  with the difference being that they are not printed in the class's toString function. If paramsOpt is None,
+  the class won't have a `.class` field and must be instantiated using `new`. Otherwise, it can be instantiated
+  using either a function call or `new A` or even `new A.class` (the latter is the recommended way when done in JS). The first parameter list will always be passed to `paramsOpt`,
+  if it exists.
+  
+  Private and public fields are defined by the user using `let` and `val` in the class's constructor.
+  Each parameter in the main parameter list **defined by the user** will automatically have an asociated
+  public/private field. The field will be public if the parameter is marked `val`, i.e. class `A(val x)`, 
+  and private otherwise. Fields in the main parameter list created after lowering will not automatically
+  have a field created.
+  
+  For example:
+  
+  class A(privateField0, val publicField0) with
+    let privateField1 = 0
+    val publicField1 = 0
+    
+  In the codegen, private and public fields are initialized by an assignment to a member symbol and a term definition
+  respectively. The symbols must match what is defined in `privateFields` and `publicFields`. 
+  (An assignment to a flow symbol will be treated as a local symbol to the constructor, not a field assignment.)
+*/
 final case class ClsLikeDefn(
     owner: Opt[InnerSymbol],
     isym: MemberSymbol[? <: ClassLikeDef] & InnerSymbol,
@@ -378,7 +425,7 @@ final case class ClsLikeDefn(
     parentPath: Opt[Path],
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
-    publicFields: Ls[BlockMemberSymbol],
+    publicFields: Ls[BlockMemberSymbol -> TermSymbol],
     preCtor: Block,
     ctor: Block,
 ) extends Defn:
@@ -393,7 +440,7 @@ final case class TraitDefn(
     parentPath: Opt[Path],
     methods: Ls[FunDefn],
     privateFields: Ls[TermSymbol],
-    publicFields: Ls[BlockMemberSymbol],
+    publicFields: Ls[BlockMemberSymbol -> TermSymbol],
     requires: Ls[Require],
     ctor: Block,
 ) extends Defn:
@@ -440,41 +487,41 @@ sealed abstract class Result extends AutoLocated:
 
   protected def children: List[Located] = this match
     case Call(fun, args) => fun :: args.map(_.value)
-    case Instantiate(cls, args) => cls :: args
+    case Instantiate(mut, cls, args) => cls :: args.map(_.value)
     case Select(qual, name) => qual :: name :: Nil
     case DynSelect(qual, fld, arrayIdx) => qual :: fld :: Nil
     case Value.Ref(l) => Nil
     case Value.This(sym) => Nil
     case Value.Lit(lit) => lit :: Nil
     case Value.Lam(params, body) => params :: body :: Nil
-    case Value.Arr(elems) => elems.map(_.value)
-    case Value.Rcd(elems) => elems.map(_.value)
+    case Value.Arr(mut, elems) => elems.map(_.value)
+    case Value.Rcd(mut, elems) => elems.map(_.value)
   
   // TODO rm Lam from values and thus the need for this method
   def subBlocks: Ls[Block] = this match
     case Call(fun, args) => fun.subBlocks ::: args.flatMap(_.value.subBlocks)
-    case Instantiate(cls, args) => args.flatMap(_.subBlocks)
+    case Instantiate(mut, cls, args) => args.flatMap(_.value.subBlocks)
     case Select(qual, name) => qual.subBlocks
     case Value.Lam(params, body) => body :: Nil
-    case Value.Arr(elems) => elems.flatMap(_.value.subBlocks)
+    case Value.Arr(mut, elems) => elems.flatMap(_.value.subBlocks)
     case _ => Nil
   
   lazy val freeVars: Set[Local] = this match
     case Call(fun, args) => fun.freeVars ++ args.flatMap(_.value.freeVars).toSet
-    case Instantiate(cls, args) => cls.freeVars ++ args.flatMap(_.freeVars).toSet
+    case Instantiate(mut, cls, args) => cls.freeVars ++ args.flatMap(_.value.freeVars).toSet
     case Select(qual, name) => qual.freeVars 
     case Value.Ref(l) => Set(l)
     case Value.This(sym) => Set.empty
     case Value.Lit(lit) => Set.empty
     case Value.Lam(params, body) => body.freeVars -- params.paramSyms
-    case Value.Arr(elems) => elems.flatMap(_.value.freeVars).toSet
-    case Value.Rcd(elems) => elems.flatMap(_.value.freeVars).toSet
+    case Value.Arr(mut, elems) => elems.flatMap(_.value.freeVars).toSet
+    case Value.Rcd(mut, args) =>
+      args.flatMap(arg => arg.idx.fold(Set.empty)(_.freeVars) ++ arg.value.freeVars).toSet
     case DynSelect(qual, fld, arrayIdx) => qual.freeVars ++ fld.freeVars
-    case Value.Rcd(args) => args.flatMap(arg => arg.idx.fold(Set.empty)(_.freeVars) ++ arg.value.freeVars).toSet
-
+  
   lazy val freeVarsLLIR: Set[Local] = this match
     case Call(fun, args) => fun.freeVarsLLIR ++ args.flatMap(_.value.freeVarsLLIR).toSet
-    case Instantiate(cls, args) => cls.freeVarsLLIR ++ args.flatMap(_.freeVarsLLIR).toSet
+    case Instantiate(mut, cls, args) => cls.freeVarsLLIR ++ args.flatMap(_.value.freeVarsLLIR).toSet
     case Select(qual, name) => qual.freeVarsLLIR 
     case Value.Ref(l: (BuiltinSymbol | TopLevelSymbol | ClassSymbol | TermSymbol)) => Set.empty
     case Value.Ref(l: MemberSymbol[?]) => l.defn match
@@ -484,10 +531,10 @@ sealed abstract class Result extends AutoLocated:
     case Value.This(sym) => Set.empty
     case Value.Lit(lit) => Set.empty
     case Value.Lam(params, body) => body.freeVarsLLIR -- params.paramSyms
-    case Value.Arr(elems) => elems.flatMap(_.value.freeVarsLLIR).toSet
-    case Value.Rcd(elems) => elems.flatMap(_.value.freeVarsLLIR).toSet
+    case Value.Arr(mut, elems) => elems.flatMap(_.value.freeVarsLLIR).toSet
+    case Value.Rcd(mut, args) =>
+      args.flatMap(arg => arg.idx.fold(Set.empty)(_.freeVarsLLIR) ++ arg.value.freeVarsLLIR).toSet
     case DynSelect(qual, fld, arrayIdx) => qual.freeVarsLLIR ++ fld.freeVarsLLIR
-    case Value.Rcd(args) => args.flatMap(arg => arg.idx.fold(Set.empty)(_.freeVarsLLIR) ++ arg.value.freeVarsLLIR).toSet
   
 // type Local = LocalSymbol
 type Local = Symbol
@@ -498,13 +545,13 @@ type Local = Symbol
  * after handler is lowered does not have any effect on the code generation. */
 case class Call(fun: Path, args: Ls[Arg])(val isMlsFun: Bool, val mayRaiseEffects: Bool) extends Result
 
-case class Instantiate(cls: Path, args: Ls[Path]) extends Result
+case class Instantiate(mut: Bool, cls: Path, args: Ls[Arg]) extends Result
 
 sealed abstract class Path extends TrivialResult:
   def selN(id: Tree.Ident): Path = Select(this, id)(N)
   def sel(id: Tree.Ident, sym: FieldSymbol): Path = Select(this, id)(S(sym))
   def selSN(id: Str): Path = selN(new Tree.Ident(id))
-  def asArg = Arg(N, this)
+  def asArg = Arg(spread = N, this)
 
 case class Select(qual: Path, name: Tree.Ident)(val symbol: Opt[FieldSymbol]) extends Path with ProductWithExtraInfo:
   def extraInfo: Str = symbol.mkString
@@ -516,8 +563,8 @@ enum Value extends Path:
   case This(sym: InnerSymbol) // TODO rm – just use Ref
   case Lit(lit: Literal)
   case Lam(params: ParamList, body: Block)
-  case Arr(elems: Ls[Arg])
-  case Rcd(elems: Ls[RcdArg])
+  case Arr(mut: Bool, elems: Ls[Arg])
+  case Rcd(mut: Bool, elems: Ls[RcdArg])
 
 case class Arg(spread: Opt[Bool], value: Path)
 

@@ -20,7 +20,7 @@
 //│ = 2
 
 +
-//│ = [function]
+//│ = fun
 
 // * A bit confusing... but at least there's a warning!
 :w
@@ -35,14 +35,14 @@
 
 :ge
 *(1)
-//│ ╔══[COMPILATION ERROR] Expected a single argument for *
+//│ ╔══[COMPILATION ERROR] Builtin '*' is not a unary operator
 //│ ║  l.37: 	*(1)
 //│ ╙──      	^^^^
 //│ ═══[COMPILATION ERROR] Cannot call non-unary builtin symbol '*'
 //│ ═══[RUNTIME ERROR] Error: Cannot call non-unary builtin symbol '*'
 
 (+)
-//│ = [function]
+//│ = fun
 
 (+)(2, 3)
 //│ = 5
@@ -52,14 +52,14 @@
 
 :ge
 (*)(2)
-//│ ╔══[COMPILATION ERROR] Expected a single argument for *
+//│ ╔══[COMPILATION ERROR] Builtin '*' is not a unary operator
 //│ ║  l.54: 	(*)(2)
 //│ ╙──      	^^^^^^
 //│ ═══[COMPILATION ERROR] Cannot call non-unary builtin symbol '*'
 //│ ═══[RUNTIME ERROR] Error: Cannot call non-unary builtin symbol '*'
 
 id(+)
-//│ = [function]
+//│ = fun
 
 id(+)(1, 2)
 //│ = 3
@@ -108,7 +108,7 @@ id(~)(2)
 
 
 typeof
-//│ = [function]
+//│ = fun
 
 typeof(1)
 //│ = "number"

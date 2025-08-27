@@ -21,17 +21,17 @@ print(1, 2, 3)
 1 print()
 //│ > 1
 
-1 . print()
+1 \ print()
 //│ > 1
 
-1 . (print(_))()
+1 \ (print(_))()
 //│ > 1
 
-{1 . print(_)}(2)
+{1 \ print(_)}(2)
 //│ > 1 2
 
 1
-  . print()
+  \ print()
 //│ > 1
 
 
@@ -86,7 +86,7 @@ passing(tuple, 1, 2, 3) of 4, 5, 6
 
 :re
 tuple passing(1, 2, 3) of 4, 5, 6
-//│ ═══[RUNTIME ERROR] TypeError: f3.bind is not a function
+//│ ═══[RUNTIME ERROR] TypeError: f.bind is not a function
 
 
 :re
@@ -109,13 +109,17 @@ tuple passing(1, 2, 3) of 4, 5, 6
 //│ ═══[RUNTIME ERROR] Error: Not implemented
 
 
+Symbols
+//│ = Symbols { prettyPrint: Symbol("mlscript.prettyPrint"), class: object Symbols }
+
+
 // * Function composition is associative
 
 let
   f = ((_ + 1) >> (_ * 2)) >> (_ - 1)
   g = (_ + 1) >> ((_ * 2) >> (_ - 1))
-//│ f = [function]
-//│ g = [function]
+//│ f = fun
+//│ g = fun
 
 [f(123), g(123)]
 //│ = [247, 247]
@@ -170,7 +174,7 @@ foldr(tuple)(0, 1, 2, 3)
 :re
 foldr(+)()
 //│ ╔══[ERROR] Expected at least 1 arguments, got 0
-//│ ║  l.171: 	foldr(+)()
+//│ ║  l.175: 	foldr(+)()
 //│ ╙──       	        ^^
 
 
@@ -209,7 +213,7 @@ Iter.joined(_, "") of [
   "2"
   "3"
 ]
-//│ = [function]
+//│ = fun
 
 
 mkStr of

@@ -312,7 +312,7 @@ fun eval(step) =
   aux
 
 let evalByValue = eval(stepByValue)
-//│ evalByValue = [function aux]
+//│ evalByValue = fun aux
 
 // Let's program with Church encoding!
 
@@ -329,7 +329,13 @@ String of stepByValue of one
 //│ = "Normal form: λf. λx. (f x)"
 
 let succ = Abs(Var("n"), Abs(Var("f"), Abs(Var("x"), App(Var("f"), App(App(Var("n"), Var("f")), Var("x"))))))
-//│ succ = Abs(Var("n"), Abs(Var("f"), Abs(Var("x"), App(Var("f"), App(App(Var("n"), Var("f")), Var("x"))))))
+//│ succ = Abs(
+//│   Var("n"),
+//│   Abs(
+//│     Var("f"),
+//│     Abs(Var("x"), App(Var("f"), App(App(Var("n"), Var("f")), Var("x"))))
+//│   )
+//│ )
 
 String of stepByValue of succ
 //│ = "Normal form: λn. λf. λx. (f ((n f) x))"

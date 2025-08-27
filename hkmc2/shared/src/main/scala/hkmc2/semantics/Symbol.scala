@@ -104,7 +104,7 @@ abstract class BlockLocalSymbol(name: Str)(using State) extends FlowSymbol(name)
   var decl: Opt[Declaration] = N
 
 class TempSymbol(val trm: Opt[Term], dbgNme: Str = "tmp")(using State) extends BlockLocalSymbol(dbgNme) with LocalSymbol:
-  val nameHints: MutSet[Str] = MutSet.empty
+  // val nameHints: MutSet[Str] = MutSet.empty // * May be useful later?
   override def toLoc: Option[Loc] = trm.flatMap(_.toLoc)
   override def toString: Str = s"$$${super.toString}"
   override def subst(using s: SymbolSubst): TempSymbol = s.mapTempSym(this)
@@ -232,6 +232,7 @@ case class ErrorSymbol(val nme: Str, tree: Tree)(using State) extends MemberSymb
 
 sealed trait ClassLikeSymbol extends Symbol:
   self: MemberSymbol[? <: ClassDef | ModuleDef | TraitDef] =>
+  val id: Tree.Ident
   val tree: Tree.TypeDef
   def subst(using sub: SymbolSubst): ClassLikeSymbol
 
@@ -279,15 +280,6 @@ class PatternSymbol(val id: Tree.Ident, val params: Opt[Tree.Tup], val body: Tre
   def nme = id.name
   def toLoc: Option[Loc] = id.toLoc // TODO track source tree of pattern here
   override def toString: Str = s"pattern:${id.name}"
-  /** The desugared nameless split. */
-  private var _split: Opt[ucs.DeBrujinSplit] = N
-  def split_=(split: ucs.DeBrujinSplit): Unit = _split = S(split)
-  def split: ucs.DeBrujinSplit = _split.getOrElse:
-    lastWords(s"found unelaborated pattern: $nme")
-  /** The list of pattern parameters, for example,
-    * `T` in `pattern Nullable(pattern T) = null | T`.
-    */
-  var patternParams: Ls[Param] = Nil
   
   override def subst(using sub: SymbolSubst): PatternSymbol = sub.mapPatSym(this)
 
