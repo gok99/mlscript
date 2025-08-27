@@ -446,6 +446,9 @@ final case class TraitDefn(
 ) extends Defn:
   val innerSym = S(isym)
   var impReqs: Set[Require] = Set.empty
+  def withImpReqs(requires: Set[Require]) =
+    impReqs = requires
+    this
 
 final case class Handler(
     sym: BlockMemberSymbol,

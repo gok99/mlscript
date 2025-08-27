@@ -24,7 +24,8 @@ trait Foo with
 //│     static boo() {
 //│       return Foo.foo * 10
 //│     }
-//│     static toString() { return "Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Foo"]; 
 //│   };
 //│   return Foo2
 //│ };
@@ -55,7 +56,8 @@ trait Bar2 with
 //│       tmp = Bar2.Foo.boo();
 //│       return tmp + 1
 //│     }
-//│     static toString() { return "Bar2"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Bar2"]; 
 //│   };
 //│   return Bar22
 //│ };
@@ -66,7 +68,8 @@ trait Bar2 with
 //│       $imp$Foo4 = $imp$Foo2;
 //│       this.foo = 1;
 //│     }
-//│     static toString() { return "$imp$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
 //│   };
 //│   return $imp$Foo4
 //│ };
@@ -91,7 +94,8 @@ trait Baz with
 //│     static tootoo() {
 //│       return Baz.Bar.Foo.too + Baz.Bar2.Foo.too
 //│     }
-//│     static toString() { return "Baz"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Baz"]; 
 //│   };
 //│   return Baz2
 //│ };
@@ -104,7 +108,8 @@ trait Baz with
 //│     static get loo() {
 //│       return 3;
 //│     }
-//│     static toString() { return "$imp$Bar$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Bar$Foo"]; 
 //│   };
 //│   return $imp$Bar$Foo2
 //│ };
@@ -127,7 +132,8 @@ class Test with
 //│     static get loo() {
 //│       return 2;
 //│     }
-//│     static toString() { return "$imp$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
 //│   };
 //│   return $imp$Foo6
 //│ };
@@ -145,9 +151,10 @@ class Test with
 //│     this.Baz = runtime.safeCall(Baz1(globalThis.Object, tmp4, tmp8));
 //│     tmp = runtime.safeCall(this.Baz.tootoo());
 //│     this.a = tmp;
-//│     Predef.print(this.Baz.Bar.Foo.foo)
+//│     Predef.print(this.Baz.Bar.Foo.foo);
 //│   }
-//│   toString() { return "Test"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "Test"]; 
 //│ };
 
 new Test().a

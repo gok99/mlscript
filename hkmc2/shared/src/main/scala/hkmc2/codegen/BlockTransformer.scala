@@ -181,7 +181,7 @@ class BlockTransformer(subst: SymbolSubst):
           (preCtor2 is preCtor) && (ctor2 is ctor)
         then defn else ClsLikeDefn(own2, isym2, sym2, k, paramsOpt2, 
           auxParams2, parentPath2, methods2, privateFields2, publicFields2, preCtor2, ctor2)
-    case TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods,
+    case td @ TraitDefn(owner, isym, sym, paramsOpt, auxParams, parentPath, methods,
       privateFields, publicFields, requires, ctor) =>
       val owner2 = owner.mapConserve(_.subst)
       val isym2 = isym.subst
@@ -202,7 +202,7 @@ class BlockTransformer(subst: SymbolSubst):
           (publicFields2 is publicFields) &&
           (requires2 is requires)
         then defn else TraitDefn(owner2, isym2, sym2, paramsOpt2, auxParams2,
-          parentPath2, methods2, privateFields2, publicFields2, requires2, ctor)
+          parentPath2, methods2, privateFields2, publicFields2, requires2, ctor).withImpReqs(td.impReqs)
 
   def applyArg(arg: Arg): Arg =
     val val2 = applyPath(arg.value)

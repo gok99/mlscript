@@ -37,9 +37,9 @@ trait Lel with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of module:A
 //│                   k = Fun
 //│                   sym = member:foo
+//│                   tsym = module:A.foo
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N
@@ -121,7 +121,8 @@ class Parent with
 //│     foo = 1;
 //│     return Predef.print(foo);
 //│   }
-//│   toString() { return "Parent"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "Parent"]; 
 //│ };
 
 module T
@@ -133,14 +134,14 @@ require T
 //│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
 //│ 	at: scala.None$.get(Option.scala:627)
 //│ 	at: scala.None$.get(Option.scala:626)
-//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1057)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1261)
-//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1261)
-//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
-//│ 	at: hkmc2.semantics.Elaborator.topLevel(Elaborator.scala:1358)
-//│ 	at: hkmc2.MLsDiffMaker.processTrees(MLsDiffMaker.scala:246)
-//│ 	at: hkmc2.MLsDiffMaker.processOrigin(MLsDiffMaker.scala:227)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1106)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1327)
+//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:118)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1327)
+//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:804)
+//│ 	at: hkmc2.semantics.Elaborator.topLevel(Elaborator.scala:1560)
+//│ 	at: hkmc2.MLsDiffMaker.processTrees(MLsDiffMaker.scala:247)
+//│ 	at: hkmc2.MLsDiffMaker.processOrigin(MLsDiffMaker.scala:228)
 
 // FIXME: bad error
 :e
@@ -150,13 +151,13 @@ trait T2 with
 //│ /!!!\ Uncaught error: java.util.NoSuchElementException: None.get
 //│ 	at: scala.None$.get(Option.scala:627)
 //│ 	at: scala.None$.get(Option.scala:626)
-//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1057)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1261)
-//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:117)
-//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1261)
-//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:765)
-//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1145)
-//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1138)
-//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1143)
+//│ 	at: hkmc2.semantics.Elaborator.go$2(Elaborator.scala:1106)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd$$anonfun$3(Elaborator.scala:1327)
+//│ 	at: hkmc2.MLsDiffMaker$$anon$1.trace(MLsDiffMaker.scala:118)
+//│ 	at: hkmc2.semantics.Elaborator.blockOrRcd(Elaborator.scala:1327)
+//│ 	at: hkmc2.semantics.Elaborator.block(Elaborator.scala:804)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1$$anonfun$1(Elaborator.scala:1198)
+//│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1191)
+//│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1196)
 
 

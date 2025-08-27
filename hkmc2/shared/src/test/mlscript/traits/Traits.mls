@@ -31,9 +31,9 @@ trait Loo with
 //│             mod = trait:Pred
 //│             path = S of Ref{member:Pred} of member:Pred
 //│           TermDefinition:
-//│             owner = S of trait:Loo
 //│             k = ImmutVal
 //│             sym = member:f
+//│             tsym = trait:Loo.f
 //│             params = Nil
 //│             tparams = N
 //│             sign = N
@@ -55,9 +55,9 @@ trait Loo with
 //│             modulefulness = Modulefulness of N
 //│             annotations = Nil
 //│           TermDefinition:
-//│             owner = S of trait:Loo
 //│             k = ImmutVal
 //│             sym = member:x
+//│             tsym = trait:Loo.x
 //│             params = Nil
 //│             tparams = N
 //│             sign = S of Ref{member:Int} of member:Int
@@ -88,7 +88,8 @@ class M with
 //│       $imp$Loo2 = $imp$Loo;
 //│       this.x = 2;
 //│     }
-//│     static toString() { return "$imp$Loo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Loo"]; 
 //│   };
 //│   return $imp$Loo2
 //│ };
@@ -99,7 +100,8 @@ class M with
 //│       $imp$Pred2 = $imp$Pred;
 //│       this.y = 2;
 //│     }
-//│     static toString() { return "$imp$Pred"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Pred"]; 
 //│   };
 //│   return $imp$Pred2
 //│ };
@@ -111,7 +113,8 @@ class M with
 //│     tmp2 = runtime.safeCall(Pred1(tmp1));
 //│     this.Loo = runtime.safeCall(Loo1(tmp, tmp2));
 //│   }
-//│   toString() { return "M"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "M"]; 
 //│ };
 
 new M().Loo.f

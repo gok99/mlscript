@@ -17,7 +17,8 @@ trait Foo with
 //│     static boo() {
 //│       return Foo.foo * 10
 //│     }
-//│     static toString() { return "Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Foo"]; 
 //│   };
 //│   return Foo2
 //│ };
@@ -45,7 +46,8 @@ trait Lol with
 //│     static {
 //│       Lol2 = Lol;
 //│     }
-//│     static toString() { return "Lol"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Lol"]; 
 //│   };
 //│   return Lol2
 //│ };
@@ -70,7 +72,8 @@ new Bar().Foo.foo
 //│       $imp$Lol2 = $imp$Lol;
 //│       this.elem = 1;
 //│     }
-//│     static toString() { return "$imp$Lol"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Lol"]; 
 //│   };
 //│   return $imp$Lol2
 //│ };
@@ -84,7 +87,8 @@ new Bar().Foo.foo
 //│     static get foo() {
 //│       return Lol2.elem;
 //│     }
-//│     static toString() { return "$imp$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
 //│   };
 //│   return $imp$Foo4
 //│ };
@@ -99,9 +103,10 @@ new Bar().Foo.foo
 //│     this.Lol = runtime.safeCall(Lol1(tmp3));
 //│     this.bar = 123;
 //│   }
-//│   toString() { return "Bar"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "Bar"]; 
 //│ };
-//│ tmp2 = new Bar3();
+//│ tmp2 = globalThis.Object.freeze(new Bar3());
 //│ tmp2.Foo.foo
 //│ = 1
 

@@ -17,7 +17,8 @@ trait Foo with
 //│     static boo() {
 //│       return Foo.foo * 10
 //│     }
-//│     static toString() { return "Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Foo"]; 
 //│   };
 //│   return Foo2
 //│ };
@@ -55,7 +56,8 @@ class Bar with
 //│       $imp$Foo6 = $imp$Foo4;
 //│       this.foo = 1;
 //│     }
-//│     static toString() { return "$imp$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
 //│   };
 //│   return $imp$Foo6
 //│ };
@@ -68,7 +70,8 @@ class Bar with
 //│   bar() {
 //│     return runtime.safeCall(this.Foo.boo())
 //│   }
-//│   toString() { return "Bar"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "Bar"]; 
 //│ };
 
 new Bar().bar()
@@ -90,7 +93,8 @@ trait FooImpl extends Foo with
 //│       FooImpl2 = FooImpl;
 //│       this.foo = 1;
 //│     }
-//│     static toString() { return "FooImpl"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "FooImpl"]; 
 //│   };
 //│   return FooImpl2
 //│ };
@@ -100,7 +104,7 @@ object Bar extends FooImpl(Object)
 :fixme
 Bar.foo()
 //│ ╔══[ERROR] Object 'Bar' does not contain member 'foo'
-//│ ║  l.101: 	Bar.foo()
+//│ ║  l.105: 	Bar.foo()
 //│ ╙──       	   ^^^^
 //│ ═══[RUNTIME ERROR] TypeError: Bar7.foo is not a function
 
@@ -113,16 +117,16 @@ class Bar with
   fun bar() = this.FooImpl.boo()
 new Bar().bar()
 //│ ╔══[ERROR] Illegal body of implement definition (should be a block; found identifier).
-//│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
+//│ ║  l.116: 	  implement Foo with FooImpl // TODO: to implement
 //│ ╙──       	                     ^^^^^^^
 //│ ╔══[ERROR] Concrete Bar does not implement all abstract members of trait Foo: foo
-//│ ║  l.110: 	  require Foo
+//│ ║  l.114: 	  require Foo
 //│ ║         	          ^^^
-//│ ║  l.111: 	  require FooImpl
+//│ ║  l.115: 	  require FooImpl
 //│ ║         	^^^^^^^^^^^^^^^^^
-//│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
+//│ ║  l.116: 	  implement Foo with FooImpl // TODO: to implement
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.113: 	  fun bar() = this.FooImpl.boo()
+//│ ║  l.117: 	  fun bar() = this.FooImpl.boo()
 //│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ JS (unsanitized):
 //│ let Bar9, $imp$Foo7, tmp1;
@@ -132,7 +136,8 @@ new Bar().bar()
 //│     static {
 //│       $imp$Foo8 = $imp$Foo6;
 //│     }
-//│     static toString() { return "$imp$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
 //│   };
 //│   return $imp$Foo8
 //│ };
@@ -144,18 +149,19 @@ new Bar().bar()
 //│   bar() {
 //│     return runtime.safeCall(this.FooImpl.boo())
 //│   }
-//│   toString() { return "Bar"; }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["class", "Bar"]; 
 //│ };
-//│ tmp1 = new Bar9();
+//│ tmp1 = globalThis.Object.freeze(new Bar9());
 //│ runtime.safeCall(tmp1.bar())
 //│ ╔══[ERROR] Concrete Bar does not implement all abstract members of trait Foo: foo
-//│ ║  l.110: 	  require Foo
+//│ ║  l.114: 	  require Foo
 //│ ║         	          ^^^
-//│ ║  l.111: 	  require FooImpl
+//│ ║  l.115: 	  require FooImpl
 //│ ║         	^^^^^^^^^^^^^^^^^
-//│ ║  l.112: 	  implement Foo with FooImpl // TODO: to implement
+//│ ║  l.116: 	  implement Foo with FooImpl // TODO: to implement
 //│ ║         	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//│ ║  l.113: 	  fun bar() = this.FooImpl.boo()
+//│ ║  l.117: 	  fun bar() = this.FooImpl.boo()
 //│ ╙──       	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ ═══[RUNTIME ERROR] TypeError: selRes.boo is not a function
 

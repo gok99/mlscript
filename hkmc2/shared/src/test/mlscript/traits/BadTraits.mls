@@ -51,7 +51,7 @@ trait Bar with
     fun foo = bar // TODO reject: no access to `bar` here
     print(Bar.bar)
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: subterm (Elaborator.scala:421)
+//│ FAILURE LOCATION: subterm (Elaborator.scala:428)
 //│ ╔══[ERROR] Name not found: bar
 //│ ║  l.51: 	    fun foo = bar // TODO reject: no access to `bar` here
 //│ ╙──      	              ^^^

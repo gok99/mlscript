@@ -231,18 +231,18 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
             wat(s"Trait ${trt.nme} has no definition", trt) 
           val requires = defn.impReqs.toList ++ defn.body.blk.stats.collect:
             case r: Require => r
-          val obj = ctx.get("Object").get.ref(Ident("Object")).asInstanceOf[Term.Ref] // wtf
+          val obj = ctx.get("Object").get.ref(Ident("Object")).asInstanceOf[Term.Ref].resolve // wtf
           val impl = path match
             case Nil => N
             case h :: t => S((h, t))
           val implArg = impl.map(p => buildTrait(p._1, p._2)).getOrElse(obj)
           val childTraits = Term.Tup((implArg :: requires.map(r => (r.mod, r.implPath)).map(p => buildTrait(p._1, p._2)))
             .map(PlainFld(_)))(Tree.DummyTup)
-          Term.App(defn.bsym.ref(), childTraits)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›"))
+          Term.App(defn.bsym.ref().resolve, childTraits)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).resolve
 
         def withTraitAssigns(rest: Block) = requires.foldRight(rest): (r, rest) =>
-          term(buildTrait(r.mod, r.implPath)): res => 
-            subTerm(cls.sym.ref()): p =>
+          term(buildTrait(r.mod, r.implPath)): res =>
+            subTerm(cls.sym.ref().resolve): p =>
               AssignField(p, r.sym.id, res, rest)(N)
 
         val (mtds, publicFlds, privateFlds, ctorPre) = cls match
@@ -1222,7 +1222,7 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
       def withAssigns(vars: Ls[VarSymbol]): Block = vars match
         case Nil => ctor
         case v :: vs => 
-          val ref = Ref(clsSym)(Tree.Ident(clsSym.nme), 666, N)
+          val ref = Ref(clsSym)(Tree.Ident(clsSym.nme), 666, N).resolve
           low.subTerm(ref, false): p =>
             AssignField(
               p,
@@ -1235,7 +1235,7 @@ class BlockTransformerTraitDef(subs: SymbolSubst)(using Config, TL, Raise, State
       val implParam =
         val varSym = VarSymbol(Ident("Impl"))
         // what's the right way to do this?
-        val clsWithPathDef = (low.subTerm(varSym.ref()): path => 
+        val clsWithPathDef = (low.subTerm(varSym.ref().resolve): path => 
           Define(ClsLikeDefn(owner, isym, clsSym, syntax.Trt, paramsOpt, auxParams, S(path), methods, 
             privFlds, pubFlds, End(), newCtor), End())) 
         val impTransformer = ImplicitRequireTransformer()

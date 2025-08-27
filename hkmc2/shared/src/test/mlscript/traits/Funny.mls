@@ -130,9 +130,9 @@ trait A4 with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of trait:T
 //│                   k = Fun
 //│                   sym = member:foo
+//│                   tsym = trait:T.foo
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N
@@ -195,9 +195,9 @@ trait A4 with
 //│             body = ObjBody of Blk:
 //│               stats = Ls of 
 //│                 TermDefinition:
-//│                   owner = S of trait:T
 //│                   k = Fun
 //│                   sym = member:foo
+//│                   tsym = trait:T.foo
 //│                   params = Nil
 //│                   tparams = N
 //│                   sign = N

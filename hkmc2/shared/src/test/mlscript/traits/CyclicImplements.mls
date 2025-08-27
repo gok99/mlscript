@@ -23,7 +23,8 @@ trait Three with
 //│       One2 = One;
 //│       One2.Two = Two2;
 //│     }
-//│     static toString() { return "One"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "One"]; 
 //│   };
 //│   return One2
 //│ };
@@ -34,7 +35,8 @@ trait Three with
 //│       Two2 = Two;
 //│       Two2.Three = Three2;
 //│     }
-//│     static toString() { return "Two"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Two"]; 
 //│   };
 //│   return Two2
 //│ };
@@ -45,7 +47,8 @@ trait Three with
 //│       Three2 = Three;
 //│       Three2.One = One2;
 //│     }
-//│     static toString() { return "Three"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Three"]; 
 //│   };
 //│   return Three2
 //│ };
@@ -98,16 +101,16 @@ trait Baz with
 //│ FAILURE: Unexpected type error
 //│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
-//│ ║  l.92: 	    val foo = 1
+//│ ║  l.95: 	    val foo = 1
 //│ ║        	              ^
-//│ ║  l.93: 	    fun loo = Bar2.Foo.loo
+//│ ║  l.96: 	    fun loo = Bar2.Foo.loo
 //│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ FAILURE: Unexpected type error
 //│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
-//│ ║  l.95: 	    val foo = Bar.Foo.foo
+//│ ║  l.98: 	    val foo = Bar.Foo.foo
 //│ ║        	              ^^^^^^^^^^^
-//│ ║  l.96: 	    fun loo = 3
+//│ ║  l.99: 	    fun loo = 3
 //│ ╙──      	^^^^^^^^^^^^^^^
 //│ JS (unsanitized):
 //│ let Baz1, $imp$Bar$Foo1, $imp$Bar2$Foo1;
@@ -125,7 +128,8 @@ trait Baz with
 //│       tmp1 = runtime.safeCall(Baz.Bar2.Foo.too());
 //│       return tmp + tmp1
 //│     }
-//│     static toString() { return "Baz"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "Baz"]; 
 //│   };
 //│   return Baz2
 //│ };
@@ -139,7 +143,8 @@ trait Baz with
 //│     static get loo() {
 //│       return Bar21.Foo.loo;
 //│     }
-//│     static toString() { return "$imp$Bar$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Bar$Foo"]; 
 //│   };
 //│   return $imp$Bar$Foo2
 //│ };
@@ -153,23 +158,24 @@ trait Baz with
 //│     static get loo() {
 //│       return 3;
 //│     }
-//│     static toString() { return "$imp$Bar2$Foo"; }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Bar2$Foo"]; 
 //│   };
 //│   return $imp$Bar2$Foo2
 //│ };
 //│ FAILURE: Unexpected type error
 //│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar2, but Bar2 (transitively) depends on trait Foo
-//│ ║  l.92: 	    val foo = 1
+//│ ║  l.95: 	    val foo = 1
 //│ ║        	              ^
-//│ ║  l.93: 	    fun loo = Bar2.Foo.loo
+//│ ║  l.96: 	    fun loo = Bar2.Foo.loo
 //│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^^
 //│ FAILURE: Unexpected type error
 //│ FAILURE LOCATION: impls (TraitResolver.scala:99)
 //│ ╔══[ERROR] Implementation has an implicit requirement on Bar, but Bar (transitively) depends on trait Foo
-//│ ║  l.95: 	    val foo = Bar.Foo.foo
+//│ ║  l.98: 	    val foo = Bar.Foo.foo
 //│ ║        	              ^^^^^^^^^^^
-//│ ║  l.96: 	    fun loo = 3
+//│ ║  l.99: 	    fun loo = 3
 //│ ╙──      	^^^^^^^^^^^^^^^
 
 trait Bar with
@@ -213,7 +219,7 @@ trait B with
   implement A with
     val a = A.c
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.214: 	    val a = A.c
+//│ ║  l.220: 	    val a = A.c
 //│ ╙──       	            ^^^
 
 :todo // want to allow?
@@ -222,7 +228,7 @@ trait C with
   implement A with
     val b = A.a
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.223: 	    val b = A.a
+//│ ║  l.229: 	    val b = A.a
 //│ ╙──       	            ^^^
 
 :todo // should disallow - circular definition
@@ -232,7 +238,7 @@ trait D with
   implement A with
     val c = A.a
 //│ ╔══[ERROR] Implementation has an implicit requirement on A, but A (transitively) depends on trait A
-//│ ║  l.233: 	    val c = A.a
+//│ ║  l.239: 	    val c = A.a
 //│ ╙──       	            ^^^
 
 trait E with
