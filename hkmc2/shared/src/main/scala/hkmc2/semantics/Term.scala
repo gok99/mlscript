@@ -501,7 +501,8 @@ final case class HandlerTermDefinition(
 final case class Require(sym: ModuleSymbol, mod: TraitSymbol, path: Opt[Term])
   extends CompanionValue:
   val annotations: Ls[Annot] = Nil
-  var implPath: Ls[TraitSymbol] = Nil
+  // Final implementing class-like -> Impl chain
+  var implPath: Map[Ls[FieldSymbol], Ls[TraitSymbol]] = Map.empty
 
 case class ObjBody(blk: Term.Blk):
   
@@ -614,7 +615,7 @@ case class TraitDef(
   val ext: Opt[New] = N
   val owner: Opt[InnerSymbol] = N
   var deps: Set[TraitSymbol] = Set.empty
-  var impReqs: Set[Require] = Set.empty
+  var impReqs: Set[(FieldSymbol, Require)] = Set.empty
 
 sealed abstract class ClassDef extends ClassLikeDef:
   val kind: ClsLikeKind

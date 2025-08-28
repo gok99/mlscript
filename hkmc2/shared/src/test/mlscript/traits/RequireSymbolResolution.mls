@@ -160,4 +160,15 @@ trait T2 with
 //│ 	at: hkmc2.semantics.Elaborator.withFields$1(Elaborator.scala:1191)
 //│ 	at: hkmc2.semantics.Elaborator.mkBody$1(Elaborator.scala:1196)
 
+trait A with
+  val x: Int
+  val y = A.x
+
+:fixme // A resolves to the function instead of the class - should reject?
+object B with
+  require A
+  implement A with
+    val x = 3
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'x' yielded 'undefined'
+
 

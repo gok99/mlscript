@@ -110,10 +110,36 @@ new Bar().Foo.foo
 //│ tmp2.Foo.foo
 //│ = 1
 
-
 :todo // why doesn't this error?
 :e
 trait A with
   val a: Int
   fun a() = 123
+
+
+trait A with
+  val x: Int
+
+trait B with
+  require A
+
+trait C1 with
+  require B
+
+trait C2 with
+  require B
+
+object F with
+  require C1
+  require C2
+  implement C2.B.A with
+    val x = 4
+  implement C1.B.A with
+    val x = 3
+
+F.C1.B.A.x
+//│ = 3
+
+F.C2.B.A.x
+//│ = 4
 

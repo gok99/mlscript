@@ -100,7 +100,8 @@ class TraitResolver(using Raise, TraceLogger, State):
               msg"Implementation has an implicit requirement on ${name}, but ${name} (transitively) depends on trait ${trt.nme}" -> p.toLoc :: Nil
           else rs.find(_.mod == r) match
             case Some(req) =>
-              p.impReqs = p.impReqs + req
+              val t: FieldSymbol -> Require = (cls.sym, req)
+              p.impReqs = p.impReqs + t
             case None => raise:
                 ErrorReport:
                   msg"Implementation ${p.sym.nme} requires trait ${r.nme}, but ${cls.sym.nme} does not" -> p.toLoc :: Nil
@@ -134,7 +135,7 @@ class TraitResolver(using Raise, TraceLogger, State):
               (or, filtered) match
                 case (S(r), Nil) => 
                   tl.log(s"Trait ${implTrait.sym.nme} completes all abstract members of ${r.path}")
-                  r.implPath = (implTrait.sym :: implPath).reverse
+                  r.implPath = r.implPath.updated(reqPath, (implTrait.sym :: implPath).reverse)
                 case _ => 
               (implTrait.sym :: implPath, or, filtered, con ++ tds)
           else (implPath, or, abs, con)

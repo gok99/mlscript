@@ -209,7 +209,7 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
             N, trt.sym, trt.bsym, trt.paramsOpt, trt.auxParams,
             N, mtds, privateFlds, publicFlds, requires, ctor
           )
-        td.impReqs = trt.impReqs
+        td.impReqs = trt.impReqs.map(_._2)
         Define(
           td,
           block(impls ::: stats, res)(k)
@@ -225,23 +225,36 @@ class Lowering()(using Config, TL, Raise, State, Ctx):
               case r: Require => Left(r)
               case o => Right(o) 
             (impls, requires, ObjBody(Term.Blk(others, res)))
+
+        def findMostSpecificImpl(reqPath: Ls[FieldSymbol], req: Require): Ls[TraitSymbol] = 
+          // println(s"Finding most specific impl for path: ${reqPath} in ${req.implPath}")
+          reqPath match
+          case Nil => Nil
+          case _ :: rest => if req.implPath.contains(reqPath)
+            then req.implPath(reqPath)
+            else findMostSpecificImpl(rest, req)
         
-        def buildTrait(trt: TraitSymbol, path: Ls[TraitSymbol]): Term =
+        def buildTrait(trt: TraitSymbol, implPath: Ls[TraitSymbol], reqPath: Ls[FieldSymbol]): Term =
+          val appReqPath = trt :: reqPath
           val defn = trt.defn.getOrElse:
             wat(s"Trait ${trt.nme} has no definition", trt) 
-          val requires = defn.impReqs.toList ++ defn.body.blk.stats.collect:
+          val requires = defn.body.blk.stats.collect:
             case r: Require => r
           val obj = ctx.get("Object").get.ref(Ident("Object")).asInstanceOf[Term.Ref].resolve // wtf
-          val impl = path match
+          val impl = implPath match
             case Nil => N
             case h :: t => S((h, t))
-          val implArg = impl.map(p => buildTrait(p._1, p._2)).getOrElse(obj)
-          val childTraits = Term.Tup((implArg :: requires.map(r => (r.mod, r.implPath)).map(p => buildTrait(p._1, p._2)))
+          val implArg = impl.map(p => buildTrait(p._1, p._2, Nil)).getOrElse(obj)
+          val impRequires = defn.impReqs.toList.map:
+            case (parent, r) => buildTrait(r.mod, findMostSpecificImpl(parent :: r.mod :: Nil, r), parent :: Nil)
+          val childTraits = Term.Tup((implArg :: impRequires ::: requires.map(r => buildTrait(r.mod, findMostSpecificImpl((r.mod :: appReqPath).reverse, r), appReqPath)))
             .map(PlainFld(_)))(Tree.DummyTup)
           Term.App(defn.bsym.ref().resolve, childTraits)(Tree.DummyApp, N, FlowSymbol("‹concrete-trait›")).resolve
 
+        val clsSymLs = Ls(cls.sym)
+
         def withTraitAssigns(rest: Block) = requires.foldRight(rest): (r, rest) =>
-          term(buildTrait(r.mod, r.implPath)): res =>
+          term(buildTrait(r.mod, findMostSpecificImpl(clsSymLs :+ r.mod, r), clsSymLs)): res =>
             subTerm(cls.sym.ref().resolve): p =>
               AssignField(p, r.sym.id, res, rest)(N)
 
