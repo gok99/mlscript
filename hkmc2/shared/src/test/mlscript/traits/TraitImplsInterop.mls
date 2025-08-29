@@ -1,0 +1,81 @@
+:js
+
+
+trait BaseLib with
+  class Foo(val x)
+
+trait DerivedLib1 with
+  require BaseLib
+  fun testFoo = case
+    BaseLib.Foo then 1
+    _ then 0
+  fun useFoo(foo: BaseLib.Foo) = foo.x
+
+trait DerivedLib2 with
+  require BaseLib
+  fun mkFoo = BaseLib.Foo(42)
+
+module Main with
+  require DerivedLib1
+  require DerivedLib2
+  // require DerivedLib1.BaseLib = DerivedLib2.BaseLib // TODO?
+
+let foo1 = Main.DerivedLib1.BaseLib.Foo(123)
+//│ foo1 = Foo(123)
+
+:fixme
+:expect 1
+Main.DerivedLib1.testFoo(foo1)
+//│ ═══[RUNTIME ERROR] Expected: '1', got: '0'
+//│ = 0
+
+let foo2 = Main.DerivedLib2.mkFoo
+//│ foo2 = Foo(42)
+
+:expect 0
+Main.DerivedLib1.testFoo(foo2)
+//│ = 0
+
+// TODO: this should eventually not type check
+:breakme
+:e
+Main.DerivedLib1.useFoo(foo2)
+//│ = 42
+
+
+trait BaseLib with
+  mut val state = 0
+
+trait DerivedLib1 with
+  // using BaseLib // TODO: support this
+  fun getState = BaseLib.state
+
+trait DerivedLib2 with
+  // using BaseLib // TODO: support this
+  fun setState = set BaseLib.state = _
+
+module Main with
+  require BaseLib
+  require DerivedLib1
+  require DerivedLib2
+
+set Main.BaseLib.state += 1
+
+Main.BaseLib.state
+//│ = 1
+
+:fixme
+Main.DerivedLib1.getState
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'state' yielded 'undefined'
+
+:fixme
+Main.DerivedLib1.setState(123)
+//│ ╔══[ERROR] Trait 'DerivedLib1' does not contain member 'setState'
+//│ ║  l.72: 	Main.DerivedLib1.setState(123)
+//│ ╙──      	^^^^^^^^^^^^^^^^^^^^^^^^^
+//│ ═══[RUNTIME ERROR] TypeError: selRes14.setState is not a function
+
+Main.BaseLib.state
+//│ = 1
+
+

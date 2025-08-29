@@ -2,26 +2,9 @@
 
 
 // :dl
-:sjs
 trait Foo with
   fun foo: Int
   fun boo() = foo * 10
-//│ JS (unsanitized):
-//│ let Foo1;
-//│ Foo1 = function Foo(Impl) {
-//│   let Foo2;
-//│   Foo2 = class Foo extends Impl {
-//│     static {
-//│       Foo2 = Foo;
-//│     }
-//│     static boo() {
-//│       return Foo.foo * 10
-//│     }
-//│     static toString() { return runtime.render(this); }
-//│     static [definitionMetadata] = ["trait", "Foo"]; 
-//│   };
-//│   return Foo2
-//│ };
 
 class Bar with
   require Foo
@@ -35,24 +18,9 @@ new Bar().bar()
 new Bar().bar2()
 //│ = 10
 
-:sjs
 trait Lol with
   val elem: Int
-//│ JS (unsanitized):
-//│ let Lol1;
-//│ Lol1 = function Lol(Impl) {
-//│   let Lol2;
-//│   Lol2 = class Lol extends Impl {
-//│     static {
-//│       Lol2 = Lol;
-//│     }
-//│     static toString() { return runtime.render(this); }
-//│     static [definitionMetadata] = ["trait", "Lol"]; 
-//│   };
-//│   return Lol2
-//│ };
 
-:sjs
 class Bar with
   require Foo
   require Lol
@@ -63,51 +31,6 @@ class Bar with
     val ok = "ok"
     fun foo = Lol.elem
 new Bar().Foo.foo
-//│ JS (unsanitized):
-//│ let Bar3, $imp$Lol1, $imp$Foo3, tmp2;
-//│ $imp$Lol1 = function $imp$Lol(Impl) {
-//│   let $imp$Lol2;
-//│   $imp$Lol2 = class $imp$Lol extends Impl {
-//│     static {
-//│       $imp$Lol2 = $imp$Lol;
-//│       this.elem = 1;
-//│     }
-//│     static toString() { return runtime.render(this); }
-//│     static [definitionMetadata] = ["trait", "$imp$Lol"]; 
-//│   };
-//│   return $imp$Lol2
-//│ };
-//│ $imp$Foo3 = function $imp$Foo(Impl, Lol2) {
-//│   let $imp$Foo4;
-//│   $imp$Foo4 = class $imp$Foo2 extends Impl {
-//│     static {
-//│       $imp$Foo4 = $imp$Foo2;
-//│       this.ok = "ok";
-//│     }
-//│     static get foo() {
-//│       return Lol2.elem;
-//│     }
-//│     static toString() { return runtime.render(this); }
-//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
-//│   };
-//│   return $imp$Foo4
-//│ };
-//│ Bar3 = class Bar2 {
-//│   constructor() {
-//│     let tmp3, tmp4, tmp5, tmp6;
-//│     tmp4 = runtime.safeCall($imp$Lol1(globalThis.Object));
-//│     tmp5 = runtime.safeCall(Lol1(tmp4));
-//│     tmp6 = runtime.safeCall($imp$Foo3(globalThis.Object, tmp5));
-//│     this.Foo = runtime.safeCall(Foo1(tmp6));
-//│     tmp3 = runtime.safeCall($imp$Lol1(globalThis.Object));
-//│     this.Lol = runtime.safeCall(Lol1(tmp3));
-//│     this.bar = 123;
-//│   }
-//│   toString() { return runtime.render(this); }
-//│   static [definitionMetadata] = ["class", "Bar"]; 
-//│ };
-//│ tmp2 = globalThis.Object.freeze(new Bar3());
-//│ tmp2.Foo.foo
 //│ = 1
 
 :todo // why doesn't this error?

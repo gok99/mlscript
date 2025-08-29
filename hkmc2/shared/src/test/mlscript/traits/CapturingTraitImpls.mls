@@ -1,0 +1,141 @@
+:js
+
+
+:sjs
+trait A with
+  fun foo: Int
+//│ JS (unsanitized):
+//│ let A1;
+//│ A1 = function A(Impl) {
+//│   let A2;
+//│   A2 = class A extends Impl {
+//│     static {
+//│       A2 = A;
+//│     }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "A"]; 
+//│   };
+//│   return A2
+//│ };
+
+
+trait B with
+  require A
+  val bar = A.foo + 1
+
+
+:e
+trait C with
+  require B
+  require A
+  implement A with
+    val foo = 3
+    val baz = B.bar
+//│ ╔══[ERROR] Implementation has an implicit requirement on B, but B (transitively) depends on trait A
+//│ ║  l.32: 	    val foo = 3
+//│ ║        	              ^
+//│ ║  l.33: 	    val baz = B.bar
+//│ ╙──      	^^^^^^^^^^^^^^^^^^^
+
+
+trait D with
+  mut val doo = 1
+
+:sjs
+trait C with
+  require D
+  require A
+  implement A with
+    fun foo = D.doo
+    set D.doo += 1
+//│ JS (unsanitized):
+//│ let C3, $imp$A3;
+//│ C3 = function C(Impl, D2, A2) {
+//│   let C4;
+//│   C4 = class C2 extends Impl {
+//│     static {
+//│       C4 = C2;
+//│       C4.D = D2;
+//│       C4.A = A2;
+//│     }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "C"]; 
+//│   };
+//│   return C4
+//│ };
+//│ $imp$A3 = function $imp$A(Impl, D2) {
+//│   let $imp$A4;
+//│   $imp$A4 = class $imp$A2 extends Impl {
+//│     static {
+//│       $imp$A4 = $imp$A2;
+//│       let tmp;
+//│       tmp = D2.doo + 1;
+//│       D2.doo = tmp;
+//│       runtime.Unit;
+//│     }
+//│     static get foo() {
+//│       return D2.doo;
+//│     }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$A"]; 
+//│   };
+//│   return $imp$A4
+//│ };
+
+// FIXME: A's impl should use the _same_ D
+:sjs
+object E with
+  require C
+  print(C.D.doo)
+  print(C.A.foo)
+//│ JS (unsanitized):
+//│ let E1;
+//│ const E$class = class E {
+//│   constructor() {
+//│     let tmp, tmp1, tmp2, tmp3, tmp4;
+//│     tmp1 = runtime.safeCall(D1(globalThis.Object));
+//│     tmp2 = runtime.safeCall(D1(globalThis.Object));
+//│     tmp3 = runtime.safeCall($imp$A3(globalThis.Object, tmp2));
+//│     tmp4 = runtime.safeCall(A1(tmp3));
+//│     this.C = runtime.safeCall(C3(globalThis.Object, tmp1, tmp4));
+//│     tmp = Predef.print(this.C.D.doo);
+//│     Predef.print(this.C.A.foo);
+//│     Object.defineProperty(this, "class", {
+//│       value: E
+//│     })
+//│   }
+//│   toString() { return runtime.render(this); }
+//│   static [definitionMetadata] = ["object", "E"]; 
+//│ }; E1 = globalThis.Object.freeze(new E$class);
+//│ > 1
+//│ > 2
+
+:fixme
+:expect [2, 2]
+[E.C.D.doo, E.C.A.foo]
+//│ ═══[RUNTIME ERROR] Expected: '[2, 2]', got: '[1, 2]'
+//│ = [1, 2]
+
+
+trait D with
+  val doo: Int
+
+trait C with
+  require D
+  require A
+  implement D with
+    val doo = 123
+  implement A with
+    val foo = 3
+    val baz = D.doo + 1
+
+object D with
+  require C
+  print(C.D.doo)
+  print(C.A.foo)
+  print(C.A.baz)
+//│ > 123
+//│ > 3
+//│ > 124
+
+

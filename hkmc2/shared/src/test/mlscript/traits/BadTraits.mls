@@ -83,11 +83,40 @@ trait C with
     val a = 2
     val b = 1
 //│ FAILURE: Unexpected type error
-//│ FAILURE LOCATION: getAbstracts (TraitResolver.scala:146)
+//│ FAILURE LOCATION: getAbstracts (TraitResolver.scala:147)
 //│ ╔══[ERROR] Trait $imp$A is unused
 //│ ║  l.83: 	    val a = 2
 //│ ║        	            ^
 //│ ║  l.84: 	    val b = 1
 //│ ╙──      	^^^^^^^^^^^^^
+
+
+:sjs
+:fixme // the definition shouldn't be accepted
+require Foo
+implement Foo with
+  fun foo = 1
+Foo
+//│ ╔══[COMPILATION ERROR] No definition found in scope for 'Foo'
+//│ ║  l.96: 	require Foo
+//│ ╙──      	        ^^^
+//│ JS (unsanitized):
+//│ let $imp$Foo7;
+//│ $imp$Foo7 = function $imp$Foo(Impl) {
+//│   let $imp$Foo8;
+//│   $imp$Foo8 = class $imp$Foo6 extends Impl {
+//│     static {
+//│       $imp$Foo8 = $imp$Foo6;
+//│     }
+//│     static get foo() {
+//│       return 1;
+//│     }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "$imp$Foo"]; 
+//│   };
+//│   return $imp$Foo8
+//│ };
+//│ Foo
+//│ ═══[RUNTIME ERROR] ReferenceError: Foo is not defined
 
 

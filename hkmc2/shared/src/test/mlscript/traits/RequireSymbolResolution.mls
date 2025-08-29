@@ -172,3 +172,31 @@ object B with
 //│ ═══[RUNTIME ERROR] Error: Access to required field 'x' yielded 'undefined'
 
 
+:sjs
+trait A with
+  fun foo: Int
+//│ JS (unsanitized):
+//│ let A4;
+//│ A4 = function A(Impl) {
+//│   let A5;
+//│   A5 = class A3 extends Impl {
+//│     static {
+//│       A5 = A3;
+//│     }
+//│     static toString() { return runtime.render(this); }
+//│     static [definitionMetadata] = ["trait", "A"]; 
+//│   };
+//│   return A5
+//│ };
+
+:breakme
+:e
+:re
+object B with
+  require A
+  implement A with
+    val foo = 1
+  val y = A.x
+//│ ═══[RUNTIME ERROR] Error: Access to required field 'x' yielded 'undefined'
+
+
